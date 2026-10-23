@@ -1,0 +1,293 @@
+name: Production CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+# Prevent concurrent deployments to avoid corrupting git/process state on AWS EC2
+concurrency:
+  group: production-deployment
+  cancel-in-progress: false
+
+permissions:
+  id-token: write # Required for GitHub OIDC token minting
+  contents: read  # Required for source code checkout
+
+jobs:
+  # ============================================================================
+  # 1. CI VALIDATION STAGE
+  # ============================================================================
+  ci-validate:
+    name: CI Validation (Backend & Frontend)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js Runtime
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: |
+            server/package-lock.json
+            client/package-lock.json
+
+      # --- Server Validation ---
+      - name: Install Backend Dependencies
+        working-directory: ./server
+        run: npm ci
+
+      - name: Typecheck Backend
+        working-directory: ./server
+        run: npm run typecheck
+
+      - name: Build Backend Bundle
+        working-directory: ./server
+        run: npm run build
+
+      # --- Client Validation ---
+      - name: Install Frontend Dependencies
+        working-directory: ./client
+        run: npm ci
+
+      - name: Lint Frontend
+        working-directory: ./client
+        run: npm run lint
+
+      - name: Typecheck Frontend
+        working-directory: ./client
+        run: npm run typecheck
+
+      - name: Build Frontend Application
+        working-directory: ./client
+        run: npm run build
+
+      - name: Log CI Verification Status
+        run: |
+          echo "### CI Verification Passed" >> $GITHUB_STEP_SUMMARY
+          echo "✓ Backend typecheck & build succeeded" >> $GITHUB_STEP_SUMMARY
+          echo "✓ Frontend lint, typecheck & production build succeeded" >> $GITHUB_STEP_SUMMARY
+
+  # ============================================================================
+  # 2. CONTINUOUS DEPLOYMENT STAGE (AWS EC2 via GitHub OIDC + AWS SSM)
+  # ============================================================================
+  deploy-production:
+    name: Deploy to Production (AWS EC2 via OIDC + SSM)
+    needs: ci-validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    environment:
+      name: production
+      url: ${{ vars.PROD_URL || 'http://16.192.60.26:3000' }}
+
+    env:
+      AWS_ROLE_ARN: ${{ vars.AWS_ROLE_ARN || 'arn:aws:iam::292511232004:role/GitHubActionsDeploymentRole' }}
+      AWS_REGION: ${{ vars.AWS_REGION || 'eu-north-1' }}
+      AWS_INSTANCE_ID: ${{ vars.AWS_INSTANCE_ID || 'i-08531a9572271b45e' }}
+      AWS_DEPLOY_PATH: ${{ vars.AWS_DEPLOY_PATH || '/home/ubuntu/app' }}
+      AWS_HOST: ${{ vars.EC2_PUBLIC_IP || vars.PROD_HOST || '16.192.60.26' }}
+      BACKEND_PORT: ${{ vars.BACKEND_PORT || '4000' }}
+      FRONTEND_PORT: ${{ vars.FRONTEND_PORT || '3000' }}
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Log Deployment Initiation
+        run: |
+          echo "================================================================"
+          echo "Starting WorkPilot Production Deployment"
+          echo "Target Commit:  ${{ github.sha }}"
+          echo "Triggered By:   ${{ github.actor }}"
+          echo "Event Name:     ${{ github.event_name }}"
+          echo "AWS Region:     ${{ env.AWS_REGION }}"
+          echo "EC2 Instance:   ${{ env.AWS_INSTANCE_ID }}"
+          echo "Deploy Path:    ${{ env.AWS_DEPLOY_PATH }}"
+          echo "IAM Role ARN:   ${{ env.AWS_ROLE_ARN }}"
+          echo "================================================================"
+
+      # ------------------------------------------------------------------------
+      # Step A: Temporary OIDC Claims Diagnostic Step
+      # (Prints safe claims: sub, aud, repository, environment, ref)
+      # ------------------------------------------------------------------------
+      - name: Inspect GitHub OIDC Claims
+        run: |
+          echo "[CD] Requesting GitHub OIDC Token for audience: sts.amazonaws.com..."
+          OIDC_RESP=$(curl -sS -H "Authorization: bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=sts.amazonaws.com")
+          RAW_TOKEN=$(echo "${OIDC_RESP}" | jq -r '.value // empty')
+          if [ -n "${RAW_TOKEN}" ]; then
+            CLAIMS_B64=$(echo "${RAW_TOKEN}" | cut -d. -f2)
+            echo "::group::[CD] GitHub OIDC Token Claims"
+            node -e '
+              const payload = Buffer.from(process.argv[1], "base64").toString("utf8");
+              const claims = JSON.parse(payload);
+              console.log(JSON.stringify({
+                sub: claims.sub,
+                aud: claims.aud,
+                repository: claims.repository,
+                repository_owner: claims.repository_owner,
+                job_workflow_ref: claims.job_workflow_ref,
+                ref: claims.ref,
+                environment: claims.environment
+              }, null, 2));
+            ' "${CLAIMS_B64}"
+            echo "::endgroup::"
+          else
+            echo "::warning::Could not obtain GitHub OIDC Token in debug inspection step."
+          fi
+
+      # ------------------------------------------------------------------------
+      # Step B: AWS OIDC Authentication via official AWS Credentials Action v5
+      # ------------------------------------------------------------------------
+      - name: Configure AWS Credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN || env.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION || env.AWS_REGION }}
+          audience: sts.amazonaws.com
+
+      - name: Verify AWS Identity
+        run: |
+          echo "[CD] AWS identity verified"
+          aws sts get-caller-identity
+
+      # ------------------------------------------------------------------------
+      # Step C: Verify EC2 Instance SSM Connectivity
+      # ------------------------------------------------------------------------
+      - name: Verify SSM Instance Reachability
+        run: |
+          echo "[CD] Verifying SSM connectivity to EC2 instance: ${{ env.AWS_INSTANCE_ID }}..."
+          SSM_STATUS=$(aws ssm describe-instance-information \
+            --filters "Key=InstanceIds,Values=${{ env.AWS_INSTANCE_ID }}" \
+            --query "InstanceInformationList[0].PingStatus" \
+            --output text || echo "NotFound")
+
+          echo "SSM Ping Status: ${SSM_STATUS}"
+          if [ "${SSM_STATUS}" != "Online" ]; then
+            echo "::error::EC2 instance ${{ env.AWS_INSTANCE_ID }} is not Online in AWS Systems Manager!"
+            echo "Action Required on AWS EC2 (${{ env.AWS_INSTANCE_ID }}):"
+            echo "  1. Ensure amazon-ssm-agent is installed and active:"
+            echo "     sudo systemctl status snap.amazon-ssm-agent.amazon-ssm-agent.service || sudo systemctl status amazon-ssm-agent"
+            echo "  2. Ensure EC2 instance IAM role has policy 'AmazonSSMManagedInstanceCore' attached"
+            echo "  3. Ensure outbound HTTPS connectivity (port 443) to ssm.${{ env.AWS_REGION }}.amazonaws.com"
+            exit 1
+          fi
+          echo "[CD] Instance reachable through SSM"
+
+      # ------------------------------------------------------------------------
+      # Step D: Execute Deployment on EC2 via AWS Systems Manager (SSM)
+      # ------------------------------------------------------------------------
+      - name: Deploy via AWS Systems Manager (SSM)
+        env:
+          COMMIT_SHA: ${{ github.sha }}
+          ACTOR: ${{ github.actor }}
+        run: |
+          set -euo pipefail
+          echo "[CD] Deploying SHA ${COMMIT_SHA} to instance ${{ env.AWS_INSTANCE_ID }}..."
+          echo "Target Deploy Path: ${{ env.AWS_DEPLOY_PATH }}"
+
+          # Execute deploy script safely as user ubuntu via sudo -iu ubuntu bash -lc '...'
+          COMMAND_ID=$(aws ssm send-command \
+            --instance-ids "${{ env.AWS_INSTANCE_ID }}" \
+            --document-name "AWS-RunShellScript" \
+            --comment "WorkPilot CI/CD Deploy: ${COMMIT_SHA:0:7} by ${ACTOR}" \
+            --parameters commands="[
+              \"sudo -iu ubuntu bash -lc 'DEPLOY_COMMIT_SHA=${COMMIT_SHA} GITHUB_ACTOR=${ACTOR} AWS_DEPLOY_PATH=${{ env.AWS_DEPLOY_PATH }} bash ${{ env.AWS_DEPLOY_PATH }}/scripts/deploy-production.sh'\"
+            ]" \
+            --output text \
+            --query "Command.CommandId")
+
+          echo "SSM Command dispatched. Command ID: ${COMMAND_ID}"
+          echo "Streaming execution logs..."
+
+          # Poll for command completion (up to 20 minutes)
+          STATUS="Pending"
+          ATTEMPTS=0
+          MAX_ATTEMPTS=120 # 120 * 10s = 1200s (20 mins)
+
+          while [ "$STATUS" == "Pending" ] || [ "$STATUS" == "InProgress" ] || [ "$STATUS" == "Delayed" ]; do
+            sleep 10
+            ATTEMPTS=$((ATTEMPTS + 1))
+
+            INVOCATION=$(aws ssm get-command-invocation \
+              --command-id "${COMMAND_ID}" \
+              --instance-id "${{ env.AWS_INSTANCE_ID }}" \
+              --output json || true)
+
+            STATUS=$(echo "$INVOCATION" | jq -r '.Status // "Pending"')
+            echo "[$(date '+%H:%M:%S')] SSM Execution Status: ${STATUS} (${ATTEMPTS}/${MAX_ATTEMPTS})"
+
+            if [ "$ATTEMPTS" -ge "$MAX_ATTEMPTS" ]; then
+              echo "::error::SSM Command timed out after 20 minutes."
+              exit 1
+            fi
+          done
+
+          # Print execution output
+          echo "==================== SSM STDOUT ===================="
+          echo "$INVOCATION" | jq -r '.StandardOutputContent // "No stdout"'
+          echo "==================== SSM STDERR ===================="
+          echo "$INVOCATION" | jq -r '.StandardErrorContent // "No stderr"'
+          echo "===================================================="
+
+          if [ "$STATUS" != "Success" ]; then
+            echo "::error::SSM Command finished with status: ${STATUS}"
+            exit 1
+          fi
+
+          echo "✓ SSM Deployment successfully completed!"
+
+      # ------------------------------------------------------------------------
+      # Step E: Post-Deployment Public Health Probes
+      # ------------------------------------------------------------------------
+      - name: Verify Backend Public Health Endpoint
+        run: |
+          echo "[CD] Verifying public backend health on ${{ env.AWS_HOST }}:${{ env.BACKEND_PORT }}..."
+          for i in {1..10}; do
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "http://${{ env.AWS_HOST }}:${{ env.BACKEND_PORT }}/api/health/liveness" || echo "000")
+            echo "Attempt $i: http://${{ env.AWS_HOST }}:${{ env.BACKEND_PORT }}/api/health/liveness -> HTTP $HTTP_CODE"
+            if [ "$HTTP_CODE" == "200" ]; then
+              echo "[CD] Backend health passed"
+              break
+            fi
+            sleep 3
+          done
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "::error::Public backend health check failed with HTTP ${HTTP_CODE}"
+            exit 1
+          fi
+
+      - name: Verify Frontend Public Health Endpoint
+        run: |
+          echo "[CD] Verifying public frontend health on ${{ env.AWS_HOST }}:${{ env.FRONTEND_PORT }}..."
+          for i in {1..10}; do
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "http://${{ env.AWS_HOST }}:${{ env.FRONTEND_PORT }}/" || echo "000")
+            echo "Attempt $i: http://${{ env.AWS_HOST }}:${{ env.FRONTEND_PORT }}/ -> HTTP $HTTP_CODE"
+            if [ "$HTTP_CODE" == "200" ] || [ "$HTTP_CODE" == "307" ] || [ "$HTTP_CODE" == "308" ]; then
+              echo "[CD] Frontend health passed"
+              break
+            fi
+            sleep 3
+          done
+          if [ "$HTTP_CODE" != "200" ] && [ "$HTTP_CODE" != "307" ] && [ "$HTTP_CODE" != "308" ]; then
+            echo "::error::Public frontend health check failed with HTTP ${HTTP_CODE}"
+            exit 1
+          fi
+
+      - name: Deployment Summary
+        if: success()
+        run: |
+          echo "[CD] Production deployment complete"
+          echo "### Production Deployment Succeeded 🚀" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Actor:** \`${{ github.actor }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **EC2 Instance:** \`${{ env.AWS_INSTANCE_ID }}\` (Region: \`${{ env.AWS_REGION }}\`)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Deploy Path:** \`${{ env.AWS_DEPLOY_PATH }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Strategy:** GitHub OIDC + Systems Manager (SSM) executed as \`ubuntu\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Backend Health:** \`http://${{ env.AWS_HOST }}:${{ env.BACKEND_PORT }}/api/health/liveness\` (HTTP 200)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Frontend Health:** \`http://${{ env.AWS_HOST }}:${{ env.FRONTEND_PORT }}/\` (HTTP 200)" >> $GITHUB_STEP_SUMMARY

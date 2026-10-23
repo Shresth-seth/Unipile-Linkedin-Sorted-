@@ -1,0 +1,199 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans:
+    "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
+    Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+  --font-heading:
+    "Plus Jakarta Sans", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Roboto, sans-serif;
+
+  --color-WORKPILOT-dark: #02040a;
+  --color-WORKPILOT-navy: #050b18;
+  --color-WORKPILOT-cyan: #38bdf8;
+  --color-WORKPILOT-cyan-bright: #00e5ff;
+  --color-WORKPILOT-blue: #3b82f6;
+  --color-WORKPILOT-violet: #6366f1;
+}
+
+@theme inline {
+  --color-app-background: var(--app-background);
+  --color-app-background-subtle: var(--app-background-subtle);
+  --color-app-surface: var(--app-surface);
+  --color-app-surface-raised: var(--app-surface-raised);
+  --color-app-surface-muted: var(--app-surface-muted);
+
+  --color-app-foreground: var(--app-foreground);
+  --color-app-foreground-secondary: var(--app-foreground-secondary);
+  --color-app-foreground-muted: var(--app-foreground-muted);
+  --color-app-foreground-faint: var(--app-foreground-faint);
+
+  --color-app-border: var(--app-border);
+  --color-app-border-strong: var(--app-border-strong);
+  --color-app-input: var(--app-input);
+}
+
+/* =========================================================================
+   SEMANTIC THEME TOKENS
+   Light = :root defaults
+   Dark = .dark overrides
+   ========================================================================= */
+
+:root {
+  color-scheme: light;
+
+  --app-background: #f8fafc;
+  --app-background-subtle: #f1f5f9;
+
+  --app-surface: #ffffff;
+  --app-surface-raised: #ffffff;
+  --app-surface-muted: #f8fafc;
+
+  --app-foreground: #0f172a;
+  --app-foreground-secondary: #334155;
+  --app-foreground-muted: #64748b;
+  --app-foreground-faint: #94a3b8;
+
+  --app-border: #e2e8f0;
+  --app-border-strong: #cbd5e1;
+
+  --app-input: #ffffff;
+  --app-overlay: rgba(15, 23, 42, 0.45);
+
+  --grid-color: rgba(15, 23, 42, 0.055);
+}
+
+.dark {
+  color-scheme: dark;
+
+  --app-background: #050608;
+  --app-background-subtle: #08090c;
+
+  --app-surface: #090a0d;
+  --app-surface-raised: #0c0d12;
+  --app-surface-muted: #0a0b0f;
+
+  --app-foreground: #f8fafc;
+  --app-foreground-secondary: #cbd5e1;
+  --app-foreground-muted: #94a3b8;
+  --app-foreground-faint: #64748b;
+
+  --app-border: rgba(255, 255, 255, 0.08);
+  --app-border-strong: rgba(255, 255, 255, 0.14);
+
+  --app-input: #090a0d;
+  --app-overlay: rgba(0, 0, 0, 0.7);
+
+  --grid-color: rgba(255, 255, 255, 0.035);
+}
+
+/* =========================================================================
+   BASE STYLES
+   ========================================================================= */
+
+html {
+  scroll-behavior: smooth;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  background: var(--app-background);
+  color: var(--app-foreground);
+  font-family: var(--font-sans);
+  overflow-x: hidden;
+  transition:
+    background-color 150ms ease,
+    color 150ms ease;
+}
+
+.font-heading {
+  font-family: var(--font-heading);
+}
+
+/* =========================================================================
+   LENIS SMOOTH SCROLLING
+   ========================================================================= */
+
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+/* =========================================================================
+   GRID PATTERN (Variable-Powered — No Theme Overrides Needed)
+   ========================================================================= */
+
+.bg-grid-subtle {
+  background-size: 48px 48px;
+  background-image:
+    linear-gradient(to right, var(--grid-color) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid-color) 1px, transparent 1px);
+}
+
+/* =========================================================================
+   GLOW UTILITIES
+   ========================================================================= */
+
+.glow-cyan-subtle {
+  box-shadow: 0 0 35px -5px rgba(56, 189, 248, 0.25);
+}
+
+.glow-cyan-pill {
+  box-shadow: 0 0 20px -3px rgba(0, 229, 255, 0.3);
+}
+
+.glow-white-button {
+  box-shadow: 0 0 25px -4px rgba(255, 255, 255, 0.35);
+}
+
+/* =========================================================================
+   KEYFRAME ANIMATIONS
+   ========================================================================= */
+
+@keyframes pulseGlow {
+  0%,
+  100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.04);
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 4s ease-in-out infinite;
+}
+
+/* =========================================================================
+   SELECTION STYLING
+   ========================================================================= */
+
+::selection {
+  background-color: #2563eb;
+  color: #ffffff;
+}
+
+::-moz-selection {
+  background-color: #2563eb;
+  color: #ffffff;
+}
