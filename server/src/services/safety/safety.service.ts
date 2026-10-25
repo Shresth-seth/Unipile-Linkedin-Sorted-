@@ -117,27 +117,48 @@ export class AccountSafetyService {
     }
 
     if (targetContactId || targetPersonLinkedinId) {
-      if (actionType === "CONNECT") {
-        let contact;
-        if (targetContactId) {
-          [contact] = await db
-            .select()
-            .from(contacts)
-            .where(eq(contacts.id, targetContactId))
-            .limit(1);
-        } else if (targetPersonLinkedinId) {
-          [contact] = await db
-            .select()
-            .from(contacts)
-            .where(
-              and(
-                eq(contacts.userId, userId),
-                eq(contacts.linkedinId, targetPersonLinkedinId),
-              ),
-            )
-            .limit(1);
-        }
+      let contact;
+      if (targetContactId) {
+        [contact] = await db
+          .select()
+          .from(contacts)
+          .where(
+            and(
+              eq(contacts.id, targetContactId),
+              eq(contacts.userId, userId),
+            ),
+          )
+          .limit(1);
 
+        if (!contact) {
+          return {
+            allowed: false,
+            reason: `Target contact ${targetContactId} not found or does not belong to user.`,
+            circuitBreakerTriggered: false,
+          };
+        }
+      } else if (targetPersonLinkedinId) {
+        [contact] = await db
+          .select()
+          .from(contacts)
+          .where(
+            and(
+              eq(contacts.userId, userId),
+              eq(contacts.linkedinId, targetPersonLinkedinId),
+            ),
+          )
+          .limit(1);
+      }
+
+      if (contact && contact.optedOut) {
+        return {
+          allowed: false,
+          reason: `Contact ${contact.name || targetContactId} has opted out of automated communications.`,
+          circuitBreakerTriggered: false,
+        };
+      }
+
+      if (actionType === "CONNECT") {
         if (
           contact &&
           (contact.status === "CONTACTED" || contact.status === "CONNECTED")

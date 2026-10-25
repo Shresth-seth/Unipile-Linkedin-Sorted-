@@ -64,7 +64,7 @@ Before starting, ensure you have:
    - Allow **HTTP (80)** from Anywhere (`0.0.0.0/0`).
    - Allow **HTTPS (443)** from Anywhere (`0.0.0.0/0`).
 7. **Advanced Details ➔ User Data**:
-   Paste the contents of [`deploy/aws/ec2-user-data.sh`](file:///e:/WORKPILOT-main/deploy/aws/ec2-user-data.sh).  
+   Paste the contents of [`deploy/aws/ec2-user-data.sh`](./ec2-user-data.sh).  
    *(This automatically installs Docker, Compose, AWS CLI, and SSM Agent on first boot)*.
 8. Click **Launch Instance**.
 9. Assign an **Elastic IP (EIP)** to the instance so the public IP remains static.
@@ -141,7 +141,7 @@ bash deploy/aws/deploy-ecs.sh
 ```
 
 ### Step 2: Configure Secrets in AWS Secrets Manager
-Create the secret keys referenced in [`deploy/aws/ecs-task-definition.json`](file:///e:/WORKPILOT-main/deploy/aws/ecs-task-definition.json):
+Create the secret keys referenced in [`deploy/aws/ecs-task-definition.json`](./ecs-task-definition.json):
 ```bash
 aws secretsmanager create-secret --name "workpilot/DATABASE_URL" --secret-string "postgresql://..."
 aws secretsmanager create-secret --name "workpilot/JWT_SECRET" --secret-string "your_jwt_secret"
@@ -184,7 +184,7 @@ If connecting to AWS RDS PostgreSQL:
 
 ## 🤖 6. Automated CI/CD via GitHub Actions (OIDC + SSM)
 
-The repository includes a production deployment workflow in [`.github/workflows/deploy-production.yml`](file:///e:/WORKPILOT-main/.github/workflows/deploy-production.yml).
+The repository includes a production deployment workflow in [`.github/workflows/deploy-production.yml`](../../.github/workflows/deploy-production.yml).
 
 ### Configure GitHub Repository Variables
 In GitHub ➔ **Settings** ➔ **Secrets and variables** ➔ **Actions** ➔ **Variables**:

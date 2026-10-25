@@ -3,9 +3,21 @@ import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import { sql } from "drizzle-orm";
 
-const connectionString =
-  process.env.DATABASE_URL ||
-  "postgresql://neondb_owner:npg_NoBl2i9yPcpq@ep-little-recipe-ay9d5cov-pooler.c-5.us-east-2.aws.neon.tech/neondb?sslmode=require";
+const connectionString = process.env.DATABASE_URL?.trim();
+if (!connectionString) {
+  console.error("❌ Fatal: DATABASE_URL environment variable is required.");
+  process.exit(1);
+}
+
+if (process.env.NODE_ENV === "production" && process.env.ALLOW_PRODUCTION_DATA_WIPE !== "true") {
+  console.error("❌ Fatal: clear-all-users is strictly forbidden in production. Set ALLOW_PRODUCTION_DATA_WIPE=true to override.");
+  process.exit(1);
+}
+
+if (process.env.CONFIRM_DESTRUCTIVE_DATABASE_WIPE !== "YES_DELETE_ALL_DATA") {
+  console.error("❌ Fatal: Destructive database wipe blocked. Set CONFIRM_DESTRUCTIVE_DATABASE_WIPE='YES_DELETE_ALL_DATA' to authorize execution.");
+  process.exit(1);
+}
 
 const client = postgres(connectionString, { prepare: false });
 const db = drizzle(client);

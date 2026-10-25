@@ -34,7 +34,19 @@ export function isInternalDbError(error: any): boolean {
 }
 
 /**
- * Returns a safe, user-facing error message that never exposes internals.
+ * Scrubs passwords, bearer tokens, API keys, and connection strings from arbitrary text.
+ */
+export function redactSensitiveText(text: string): string {
+  if (!text || typeof text !== "string") return "";
+  return text
+    .replace(/(postgres(?:ql)?:\/\/[^:]+:)[^@]+(@)/gi, "$1[REDACTED]$2")
+    .replace(/(bearer\s+)[a-z0-9_\-\.]+/gi, "$1[REDACTED]")
+    .replace(/(api[_-]?key[:=]\s*)[a-z0-9_\-\.]+/gi, "$1[REDACTED]")
+    .replace(/(password[:=]\s*)[^\s,;&]+/gi, "$1[REDACTED]");
+}
+
+/**
+ * Returns a safe, user-facing error message that never exposes internals or credentials.
  *
  * @param error        The caught error object.
  * @param fallback     Generic fallback message for this specific operation.
@@ -48,5 +60,20 @@ export function safeErrorMessage(
   if (isInternalDbError(error)) {
     return dbFallback;
   }
-  return error?.message || fallback;
+  const rawMsg = error?.message || fallback;
+  return redactSensitiveText(rawMsg);
 }
+
+/**
+ * Typed domain error representing an entity or resource that does not exist or is inaccessible.
+ * Enables controllers to safely return HTTP 404 without relying on brittle substring matching.
+ */
+export class NotFoundError extends Error {
+  public readonly statusCode = 404;
+  constructor(message: string) {
+    super(message);
+    this.name = "NotFoundError";
+    Object.setPrototypeOf(this, new.target.prototype);
+  }
+}
+

@@ -1,6 +1,7 @@
 import { eq, and, desc } from "drizzle-orm";
 import { db } from "../../db/index.js";
 import { contacts, Contact } from "../../db/schema.js";
+import { NotFoundError } from "../../utils/error.util.js";
 
 export interface FunnelStats {
   totalLeads: number;
@@ -136,7 +137,7 @@ export class CrmService {
       .returning();
 
     if (!updated) {
-      throw new Error(`Contact ${contactId} not found.`);
+      throw new NotFoundError(`Contact ${contactId} not found.`);
     }
 
     return updated;

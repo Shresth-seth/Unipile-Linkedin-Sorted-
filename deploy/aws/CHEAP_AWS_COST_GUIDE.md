@@ -50,7 +50,7 @@ If you prefer everything self-contained in a single AWS server without any third
 2. **Orchestration**: `docker-compose -f docker-compose.yml up -d`.
    - Runs PostgreSQL, Redis, Express server, Next.js client, and Nginx on the same machine.
 3. **Memory Hardening**:
-   - The included [`deploy/aws/ec2-user-data.sh`](file:///e:/WORKPILOT-main/deploy/aws/ec2-user-data.sh) automatically creates a **4GB Swap File** on NVMe SSD.
+   - The included [`deploy/aws/ec2-user-data.sh`](./ec2-user-data.sh) automatically creates a **4GB Swap File** on NVMe SSD.
    - Even on a 1GB RAM instance, your total available memory is **5GB**, preventing Out-Of-Memory (OOM) crashes during builds or traffic spikes.
    - Tuned memory parameters:
      - PostgreSQL memory is tuned to ~80MB (`shared_buffers=128MB`, `max_connections=50`).
@@ -65,11 +65,11 @@ If you prefer everything self-contained in a single AWS server without any third
 
 ### 1. Never Launch an AWS NAT Gateway
 - An AWS NAT Gateway costs **$32.40/month** just to exist, plus $0.045 per GB transferred.
-- Instead, place your EC2 instance in a public subnet with a free Elastic IP (EIP). Configure the host firewall with `ufw` (which [`deploy/aws/ec2-user-data.sh`](file:///e:/WORKPILOT-main/deploy/aws/ec2-user-data.sh) does automatically).
+- Instead, place your EC2 instance in a public subnet with a free Elastic IP (EIP). Configure the host firewall with `ufw` (which [`deploy/aws/ec2-user-data.sh`](./ec2-user-data.sh) does automatically).
 
 ### 2. Never Use an Application Load Balancer (ALB) for Single Instances
 - An AWS ALB costs **$16 to $25/month** minimum.
-- Instead, use the included [`deploy/aws/nginx.conf`](file:///e:/WORKPILOT-main/deploy/aws/nginx.conf) or [`deploy/aws/nginx-single-domain.conf`](file:///e:/WORKPILOT-main/deploy/aws/nginx-single-domain.conf) with free Let's Encrypt SSL certificates.
+- Instead, use the included [`deploy/aws/nginx.conf`](./nginx.conf) or [`deploy/aws/nginx-single-domain.conf`](./nginx-single-domain.conf) with free Let's Encrypt SSL certificates.
 
 ### 3. Use AWS 1-Year Compute Savings Plans
 - Once your instance is running, commit to a 1-year EC2 Savings Plan in the AWS Billing Console.

@@ -37,6 +37,16 @@ jobs:
             server/package-lock.json
             client/package-lock.json
 
+      # --- Secret Scanning & Credential Exposure Prevention ---
+      - name: Secret Scanning Validation
+        run: node scripts/scan-secrets.mjs
+
+      - name: Verify Secret Scanner Regression
+        run: node scripts/test-secret-scanner.mjs
+
+      - name: Verify Production Config Validation & Error Redaction
+        run: node scripts/test-config-validation.mjs
+
       # --- Server Validation ---
       - name: Install Backend Dependencies
         working-directory: ./server
@@ -70,6 +80,7 @@ jobs:
       - name: Log CI Verification Status
         run: |
           echo "### CI Verification Passed" >> $GITHUB_STEP_SUMMARY
+          echo "✓ Automated secret scan passed (no committed credentials)" >> $GITHUB_STEP_SUMMARY
           echo "✓ Backend typecheck & build succeeded" >> $GITHUB_STEP_SUMMARY
           echo "✓ Frontend lint, typecheck & production build succeeded" >> $GITHUB_STEP_SUMMARY
 

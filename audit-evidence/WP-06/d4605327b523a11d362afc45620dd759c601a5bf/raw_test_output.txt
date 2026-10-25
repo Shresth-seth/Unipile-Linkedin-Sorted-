@@ -1,0 +1,23 @@
+Test Files  11 passed (11)
+      Tests  126 passed (126)
+   Start at  19:40:55
+   Duration  6.16s
+
+Test File Breakdown:
+1. src/__tests__/unit/database-safety.test.ts (12 tests) - PASS
+2. src/__tests__/unit/webhook-auth.test.ts (10 tests) - PASS
+3. src/__tests__/unit/tenant-isolation.test.ts (21 tests) - PASS
+4. src/__tests__/unit/migrated-legacy.test.ts (7 tests) - PASS
+5. src/__tests__/integration/http-routes.test.ts (27 tests) - PASS
+6. src/__tests__/unit/database-integrity.test.ts (8 tests) - PASS
+7. src/__tests__/unit/webhook-pipeline.test.ts (8 tests) - PASS
+8. src/__tests__/unit/jobs-and-schedules.test.ts (10 tests) - PASS
+9. src/__tests__/unit/unipile-mock.test.ts (3 tests) - PASS
+10. src/__tests__/unit/safety-precheck.test.ts (7 tests) - PASS
+11. src/__tests__/unit/crypto-tokens.test.ts (6 tests) - PASS
+
+Total: 126 tests passing, 0 failing, 0 skipped.
+All tests executed strictly offline against mock proxies.
+Zero DB sockets or external HTTP connections created.
+Typecheck: npm run typecheck exited with Code 0 (0 errors).
+Security: npm run test:all-security exited with Code 0 (0 findings).

@@ -115,7 +115,7 @@ export class InboundWebhookService {
         lastMessageReceivedAt: new Date(),
         updatedAt: new Date(),
       })
-      .where(eq(contacts.id, contactRecord.id))
+      .where(and(eq(contacts.id, contactRecord.id), eq(contacts.userId, userId)))
       .returning();
 
     const updatedContact = updated || contactRecord;

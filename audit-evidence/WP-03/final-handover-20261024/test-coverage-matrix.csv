@@ -1,0 +1,59 @@
+Suite,Test_ID,Category,Target_Route_Or_Module,Mock_Boundary,Expected_Status,Asserted_Invariants,Execution_Status
+network-guard.test.ts,NET-01,Network Guard,globalThis.fetch -> Unipile,Application Hook,Rejection,Throws [NETWORK HAZARD BLOCKED],PASS
+network-guard.test.ts,NET-02,Network Guard,globalThis.fetch -> Gemini,Application Hook,Rejection,Throws [NETWORK HAZARD BLOCKED],PASS
+network-guard.test.ts,NET-03,Network Guard,globalThis.fetch -> Razorpay,Application Hook,Rejection,Throws [NETWORK HAZARD BLOCKED],PASS
+network-guard.test.ts,NET-04,Network Guard,globalThis.fetch -> Resend,Application Hook,Rejection,Throws [NETWORK HAZARD BLOCKED],PASS
+network-guard.test.ts,NET-05,Network Guard,http.request -> Remote Host,Application Hook,Rejection,Throws [NETWORK HAZARD BLOCKED],PASS
+network-guard.test.ts,NET-06,Network Guard,https.request -> Remote Host,Application Hook,Rejection,Throws [NETWORK HAZARD BLOCKED],PASS
+crm-stage-defect.test.ts,DEF-01,Defect Remediation,PATCH /api/dashboard/contacts/:id/stage,Controller Direct,401 Unauthorized,Missing token rejected,PASS
+crm-stage-defect.test.ts,DEF-02,Defect Remediation,PATCH /api/dashboard/contacts/:id/stage,Controller Direct,400 Bad Request,Empty ID or stage rejected,PASS
+crm-stage-defect.test.ts,DEF-03,Defect Remediation,PATCH /api/dashboard/contacts/:id/stage,crmService Stub,404 Not Found,Cross-tenant access returns 404 not 500,PASS
+crm-stage-defect.test.ts,DEF-04,Defect Remediation,PATCH /api/dashboard/contacts/:id/stage,crmService Stub,200 OK,Same-tenant update succeeds,PASS
+crm-stage-defect.test.ts,DEF-05,Defect Remediation,PATCH /api/dashboard/contacts/:id/stage,crmService Stub,404 Not Found,Typed NotFoundError returns 404,PASS
+crm-stage-defect.test.ts,DEF-06,Defect Remediation,PATCH /api/dashboard/contacts/:id/stage,crmService Stub,500 Internal Error,Internal DB error returns 500 with redaction,PASS
+migrated-legacy.test.ts,LEG-01,Legacy Assertion,agentMemory.getMemoryForUser,LangGraph Checkpointer,In-Memory State,Dedicated isolated MemorySaver per user,PASS
+migrated-legacy.test.ts,LEG-02,Legacy Assertion,agentMemory Multi-Turn,LangGraph Checkpointer,In-Memory State,Tenant memory retained without cross-leakage,PASS
+migrated-legacy.test.ts,LEG-03,Legacy Assertion,agentMemory.clearHistory,LangGraph Checkpointer,In-Memory State,Cache clear strictly isolated to target user,PASS
+migrated-legacy.test.ts,LEG-04,Legacy Assertion,crypto.verifyWebhookSignature,HMAC-SHA256 Module,Deterministic Hash,Valid signature accepted,PASS
+migrated-legacy.test.ts,LEG-05,Legacy Assertion,crypto.verifyWebhookSignature,HMAC-SHA256 Module,Deterministic Hash,Tampered payload rejected,PASS
+migrated-legacy.test.ts,LEG-06,Legacy Assertion,crypto.encryptText / decryptText,AES-256-GCM Module,Deterministic Key,Ciphertext decrypts cleanly,PASS
+migrated-legacy.test.ts,LEG-07,Legacy Assertion,crypto.encryptText,AES-256-GCM Module,Deterministic Key,Tampered tag/ciphertext throws error,PASS
+tenant-isolation.test.ts,ISO-CRM-01,Tenant Isolation,GET /api/dashboard/contacts,db.select Stub,200 Scoped,Returns strictly Tenant A contacts,PASS
+tenant-isolation.test.ts,ISO-CRM-02,Tenant Isolation,PATCH /api/dashboard/contacts/:id/stage,crmService Stub,404 Not Found,Zero mutation on unowned contact,PASS
+tenant-isolation.test.ts,ISO-CONV-01,Tenant Isolation,GET /api/conversations/:contactId/messages,db.select Stub,404 Not Found,Zero messages leaked across tenants,PASS
+tenant-isolation.test.ts,ISO-CONV-02,Tenant Isolation,POST /api/conversations/:contactId/reply,linkedInMessageService Stub,404 Not Found,0 replyToThread calls on unowned contact,PASS
+tenant-isolation.test.ts,ISO-CONV-03,Tenant Isolation,POST /api/conversations/:contactId/takeover,db.update Stub,404 Not Found,0 takeover state mutation across tenants,PASS
+tenant-isolation.test.ts,ISO-LI-01,Tenant Isolation,GET /api/linkedin/checkpoint/status/:accountId,db.select Stub,404 Not Found,0 checkpoint hints leaked across tenants,PASS
+tenant-isolation.test.ts,ISO-LI-02,Tenant Isolation,POST /api/linkedin/checkpoint/solve,unipileClient Mock,404 Not Found,0 solveCheckpoint calls on unowned account,PASS
+tenant-isolation.test.ts,ISO-LI-03,Tenant Isolation,POST /api/linkedin/disconnect,accountService Stub,200 Scoped,Disconnects only calling tenant account,PASS
+tenant-isolation.test.ts,ISO-ADM-01,Tenant Isolation,GET /api/admin/users,db.select Stub,403 Forbidden,Regular user denied user roster,PASS
+tenant-isolation.test.ts,ISO-ADM-02,Tenant Isolation,POST /api/admin/settings/unipile,db.select Stub,403 Forbidden,Regular user denied system config mutation,PASS
+tenant-isolation.test.ts,ISO-ADM-03,Tenant Isolation,POST /api/admin/daily-agent/run/:userId,db.select Stub,403 Forbidden,Regular user denied admin worker execution,PASS
+tenant-isolation.test.ts,ISO-ADM-04,Tenant Isolation,POST /internal/admin/daily-agent/run/:userId,db.select Stub,403 Forbidden,Regular user denied internal admin trigger,PASS
+tenant-isolation.test.ts,ISO-WRK-01,Tenant Isolation,ActionQueueWorker.processDueActions,db.select / update Stub,200 Scoped,Worker executes only owning tenant actions,PASS
+tenant-isolation.test.ts,ISO-WRK-02,Tenant Isolation,MessageAgent.getGeminiChatModel,geminiConfigService Stub,Scoped Config,BYOK keys strictly separated per tenant,PASS
+http-routes.test.ts,HTTP-01,HTTP Integration,GET /api/dashboard/contacts,Express + authenticate,401 Unauthorized,Zero DB queries executed,PASS
+http-routes.test.ts,HTTP-02,HTTP Integration,PATCH /api/dashboard/contacts/:id/stage,Express + authenticate,401 Unauthorized,Zero DB mutations executed,PASS
+http-routes.test.ts,HTTP-03,HTTP Integration,GET /api/conversations/:contactId/messages,Express + authenticate,401 Unauthorized,Zero conversation data leaked,PASS
+http-routes.test.ts,HTTP-04,HTTP Integration,POST /api/conversations/:contactId/reply,Express + authenticate,401 Unauthorized,Zero provider calls emitted,PASS
+http-routes.test.ts,HTTP-05,HTTP Integration,GET /api/linkedin/checkpoint/status/:accountId,Express + authenticate,401 Unauthorized,Zero Unipile calls emitted,PASS
+http-routes.test.ts,HTTP-06,HTTP Integration,GET /api/admin/users,Express + authenticate,401 Unauthorized,Zero admin rosters leaked,PASS
+http-routes.test.ts,HTTP-07,HTTP Integration,GET /api/dashboard/contacts (tampered token),Express + authenticate,401 Unauthorized,Invalid token rejected fail-closed,PASS
+http-routes.test.ts,HTTP-08,HTTP Integration,POST /api/conversations/:contactId/takeover,Express + authenticate,401 Unauthorized,Zero takeover state mutated,PASS
+http-routes.test.ts,HTTP-09,HTTP Integration,POST /api/linkedin/disconnect,Express + authenticate,401 Unauthorized,Zero accounts disconnected,PASS
+http-routes.test.ts,HTTP-10,HTTP Integration,GET /api/admin/users,Express + requireAdmin,403 Forbidden,Regular user blocked by role guard,PASS
+http-routes.test.ts,HTTP-11,HTTP Integration,POST /api/admin/settings/unipile,Express + requireAdmin,403 Forbidden,Regular user blocked from provider settings,PASS
+http-routes.test.ts,HTTP-12,HTTP Integration,POST /api/admin/daily-agent/run/:userId,Express + requireAdmin,403 Forbidden,Regular user blocked from triggering agent,PASS
+http-routes.test.ts,HTTP-13,HTTP Integration,POST /internal/admin/daily-agent/run/:userId,Express + requireAdmin,403 Forbidden,Regular user blocked from internal route,PASS
+http-routes.test.ts,HTTP-14,HTTP Integration,GET /api/admin/users (Admin user),Express + requireAdmin,200 OK,Admin positive control succeeds,PASS
+http-routes.test.ts,HTTP-15,HTTP Integration,GET /api/dashboard/contacts,Express + Router Mount,200 Scoped,Tenant B only receives Tenant B contacts,PASS
+http-routes.test.ts,HTTP-16,HTTP Integration,PATCH /api/dashboard/contacts/:id/stage,Express + Router Mount,404 Not Found,Tenant B cannot update Tenant A contact; 0 mutation,PASS
+http-routes.test.ts,HTTP-17,HTTP Integration,GET /api/conversations/:contactId/messages,Express + Router Mount,404 Not Found,Tenant B reading Tenant A returns 404; 0 leaked,PASS
+http-routes.test.ts,HTTP-18,HTTP Integration,POST /api/conversations/:contactId/reply,Express + Router Mount,404 Not Found,Tenant B replying Tenant A returns 404; 0 provider calls,PASS
+http-routes.test.ts,HTTP-19,HTTP Integration,POST /api/conversations/:contactId/takeover,Express + Router Mount,404 Not Found,Tenant B taking over Tenant A returns 404; 0 mutation,PASS
+http-routes.test.ts,HTTP-20,HTTP Integration,GET /api/linkedin/checkpoint/status/:accountId,Express + Router Mount,404 Not Found,Tenant B inspecting Tenant A returns 404; 0 calls,PASS
+http-routes.test.ts,HTTP-21,HTTP Integration,POST /api/linkedin/checkpoint/solve,Express + Router Mount,404 Not Found,Tenant B solving Tenant A returns 404; 0 calls,PASS
+http-routes.test.ts,HTTP-22,HTTP Integration,POST /api/linkedin/disconnect,Express + Router Mount,200 Scoped,Tenant B disconnects strictly Tenant B; Tenant A untouched,PASS
+http-routes.test.ts,HTTP-23,HTTP Integration,PATCH /api/dashboard/contacts/:id/stage (Owner),Express + Router Mount,200 OK,Tenant A updating own contact succeeds and mutates,PASS
+http-routes.test.ts,HTTP-24,HTTP Integration,POST /api/conversations/:contactId/takeover (Owner),Express + Router Mount,200 OK,Tenant A taking over own contact succeeds (MANUAL mode),PASS
+http-routes.test.ts,HTTP-25,HTTP Integration,GET /api/nonexistent-route-xyz,Express 404 Handler,404 Not Found,Router pipeline 404 catch-all verified,PASS

@@ -1,6 +1,6 @@
 import { db } from "../../db/index.js";
 import { messageAgentJobs } from "../../db/schema.js";
-import { eq, and, lt, desc } from "drizzle-orm";
+import { eq, and, lt, desc, gte } from "drizzle-orm";
 import { unipileMessageAgentService } from "./unipile-message-agent.service.js";
 
 export interface MessageJobTelemetry {
@@ -182,6 +182,23 @@ export class MessageAgentWorker {
             eq(messageAgentJobs.status, "PROCESSING"),
             lt(messageAgentJobs.createdAt, staleCutoff),
             lt(messageAgentJobs.attemptCount, 3),
+          ),
+        )
+        .catch(() => {});
+
+      // Mark exhausted stale PROCESSING jobs as FAILED to prevent orphans
+      await db
+        .update(messageAgentJobs)
+        .set({
+          status: "FAILED",
+          error: "Message processing timed out after max attempts",
+          processedAt: new Date(),
+        })
+        .where(
+          and(
+            eq(messageAgentJobs.status, "PROCESSING"),
+            lt(messageAgentJobs.createdAt, staleCutoff),
+            gte(messageAgentJobs.attemptCount, 3),
           ),
         )
         .catch(() => {});

@@ -1,7 +1,16 @@
 node_modules
 dist
-.env
+.env*
+!.env.example
 *.log
 npm-debug.log*
 .git
 .gitignore
+*.pem
+*.key
+*.pkcs12
+*.pfx
+*.id_rsa*
+*.id_ed25519*
+keys/
+deploy/keys/

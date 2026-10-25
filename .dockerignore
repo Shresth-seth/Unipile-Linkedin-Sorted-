@@ -6,3 +6,15 @@
 **/*.tsbuildinfo
 **/.env*
 !**/.env.example
+!**/.env.production.example
+**/*.pem
+**/*.key
+**/*.pkcs12
+**/*.pfx
+**/*.id_rsa*
+**/*.id_ed25519*
+**/deploy/keys
+**/keys
+**/secrets
+**/*.tar.gz
+**/*.tgz

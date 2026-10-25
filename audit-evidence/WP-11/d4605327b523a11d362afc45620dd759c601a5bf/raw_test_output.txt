@@ -1,0 +1,14 @@
+npm notice run server@1.0.0 npx
+npm notice run vitest run src/__tests__/unit/visibility-and-recovery.test.ts
+
+ RUN  v5.0.5 C:/Users/Admin/OneDrive/Desktop/unipile/server
+
+stdout | src/__tests__/unit/visibility-and-recovery.test.ts
+◇ injected env (16) from .env
+
+ ✓ src/__tests__/unit/visibility-and-recovery.test.ts (7 tests) 167ms
+
+ Test Files  1 passed (1)
+      Tests  7 passed (7)
+   Start at  20:21:26
+   Duration  4.88s (import 86%, transform 9%, tests 4%, setup 1%)

@@ -1,9 +1,11 @@
 import { Request, Response } from "express";
+import fs from "fs";
 import { sql } from "drizzle-orm";
 import { db } from "../db/index.js";
 import { crmService } from "../services/crm/crm.service.js";
 import { accountSafetyService } from "../services/safety/safety.service.js";
 import { AuthRequest } from "../middlewares/auth.middleware.js";
+import { NotFoundError, isInternalDbError, safeErrorMessage } from "../utils/error.util.js";
 
 export class DashboardController {
   private getAuthenticatedUserId(req: Request): string | null {
@@ -98,7 +100,15 @@ export class DashboardController {
       res.status(200).json({ success: true, data: updated });
     } catch (error: any) {
       console.error("Failed to update contact stage:", error);
-      res.status(500).json({ success: false, error: error.message });
+      if (error instanceof NotFoundError || error?.name === "NotFoundError") {
+        res.status(404).json({ success: false, error: error.message });
+        return;
+      }
+      if (!isInternalDbError(error) && error?.message && error.message.toLowerCase().includes("contact") && error.message.toLowerCase().includes("not found")) {
+        res.status(404).json({ success: false, error: error.message });
+        return;
+      }
+      res.status(500).json({ success: false, error: safeErrorMessage(error, "Failed to update contact stage") });
     }
   }
 
@@ -172,10 +182,30 @@ export class DashboardController {
 
   /**
    * GET /api/health/liveness
-   * Basic liveness probe confirming Express is alive.
+   * High-visibility liveness probe confirming Express is alive, returning version stamp, uptime, and memory.
    */
   public liveness(_req: Request, res: Response): void {
-    res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });
+    let version = process.env.DEPLOY_COMMIT_SHA || process.env.GIT_COMMIT || "1.0.0";
+    try {
+      if (fs.existsSync(".deploy-version")) {
+        version = fs.readFileSync(".deploy-version", "utf8").trim();
+      } else if (fs.existsSync("server/.deploy-version")) {
+        version = fs.readFileSync("server/.deploy-version", "utf8").trim();
+      }
+    } catch (_) {}
+
+    const mem = process.memoryUsage();
+    res.status(200).json({
+      status: "ok",
+      version,
+      uptimeSeconds: Math.floor(process.uptime()),
+      memory: {
+        rssBytes: mem.rss,
+        heapUsedBytes: mem.heapUsed,
+        heapTotalBytes: mem.heapTotal,
+      },
+      timestamp: new Date().toISOString(),
+    });
   }
 
   /**

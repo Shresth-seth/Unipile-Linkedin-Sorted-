@@ -4,15 +4,22 @@ import postgres from "postgres";
 import { sql } from "drizzle-orm";
 import bcrypt from "bcrypt";
 
-const client = postgres(
-  process.env.DATABASE_URL ||
-    "postgresql://neondb_owner:npg_NoBl2i9yPcpq@ep-little-recipe-ay9d5cov-pooler.c-5.us-east-2.aws.neon.tech/neondb?sslmode=require",
-  { prepare: false }
-);
+import crypto from "crypto";
+
+const dbUrl = process.env.DATABASE_URL?.trim();
+if (!dbUrl) {
+  console.error("❌ Fatal: DATABASE_URL environment variable is required.");
+  process.exit(1);
+}
+
+const client = postgres(dbUrl, { prepare: false });
 const db = drizzle(client);
 
-const targetEmail = "admin@workpilot.co.in";
-const defaultPassword = "Admin@WorkPilot2026!";
+const targetEmail = process.env.ADMIN_EMAIL || process.argv[2] || "admin@workpilot.co.in";
+const adminPassword =
+  process.env.ADMIN_INITIAL_PASSWORD ||
+  process.argv[3] ||
+  crypto.randomBytes(16).toString("hex");
 
 async function main() {
   console.log(`Checking user: ${targetEmail}...`);
@@ -29,17 +36,19 @@ async function main() {
     );
     console.log("✅ User successfully updated to ADMIN:", updated[0]);
   } else {
-    console.log(`User ${targetEmail} not found. Creating new ADMIN user with password: ${defaultPassword}...`);
-    const hashedPassword = await bcrypt.hash(defaultPassword, 10);
+    console.log(`User ${targetEmail} not found. Creating new ADMIN user...`);
+    const hashedPassword = await bcrypt.hash(adminPassword, 10);
     const created = await db.execute(
       sql`INSERT INTO users (name, email, password, role, created_at, updated_at)
           VALUES ('WorkPilot Admin', ${targetEmail}, ${hashedPassword}, 'ADMIN', NOW(), NOW())
           RETURNING id, name, email, role`
     );
     console.log("✅ New ADMIN user created:", created[0]);
-    console.log(`🔑 Login Credentials:
-       Email:    ${targetEmail}
-       Password: ${defaultPassword}`);
+    if (process.env.ADMIN_INITIAL_PASSWORD || process.argv[3]) {
+      console.log(`🔑 Admin user initialized with environment-supplied password.`);
+    } else {
+      console.log(`🔑 One-time generated password (set ADMIN_INITIAL_PASSWORD to customize): ${adminPassword}`);
+    }
   }
 
   // Also list all admin users

@@ -198,7 +198,7 @@ export class ProspectService {
         connectedAt: new Date(),
         updatedAt: new Date(),
       })
-      .where(eq(contacts.id, contact.id))
+      .where(and(eq(contacts.id, contact.id), eq(contacts.userId, userId)))
       .returning();
 
     let nextAction = null;

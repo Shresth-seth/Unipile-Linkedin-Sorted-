@@ -146,6 +146,13 @@ export const chatWithAgent = async (
 ): Promise<void> => {
   try {
     const userId = await resolveUserId(req);
+    if (!userId) {
+      res.status(401).json({
+        success: false,
+        message: "Authentication required.",
+      });
+      return;
+    }
     const { messages, threadId, modelName, apiKey, resume, agentSettings } =
       req.body;
 
@@ -569,7 +576,7 @@ export const approveDraftReply = async (
         lastMessageSentAt: new Date(),
         updatedAt: new Date(),
       })
-      .where(eq(contacts.id, contact.id));
+      .where(and(eq(contacts.id, contact.id), eq(contacts.userId, userId)));
 
     res.status(200).json({
       success: true,
@@ -653,25 +660,17 @@ export const outreachConnections = async (
 
     const safeCount = Math.min(Math.max(1, Math.floor(Number(count) || 10)), 100);
 
-    // Get the user's LinkedIn account
-    let [account] = await db
+    // Strictly scoped: only use the authenticated user's own connected account
+    const [account] = await db
       .select()
       .from(linkedinAccounts)
-      .where(eq(linkedinAccounts.userId, userId))
+      .where(
+        and(
+          eq(linkedinAccounts.userId, userId),
+          eq(linkedinAccounts.isConnected, true),
+        ),
+      )
       .limit(1);
-
-    // Fallback: if not mapped directly, use active connected account
-    if (!account?.unipileAccountId) {
-      const [activeAcc] = await db
-        .select()
-        .from(linkedinAccounts)
-        .where(eq(linkedinAccounts.isConnected, true))
-        .orderBy(desc(linkedinAccounts.updatedAt))
-        .limit(1);
-      if (activeAcc?.unipileAccountId) {
-        account = activeAcc;
-      }
-    }
 
     if (!account?.unipileAccountId) {
       res.status(400).json({

@@ -1,0 +1,15 @@
+test_id,component_target,synthetic_actors,http_method,target_path,expected_status,db_mutation,provider_side_effect,execution_status,notes
+ISO-CRM-01,DashboardController.getContacts,Tenant B -> Tenant A,GET,/api/dashboard/contacts,200,None,None,VERIFIED PASS,Tenant B receives only own contacts; 0 bytes of Tenant A data
+ISO-CRM-02,DashboardController.updateContactStage,Tenant B -> Tenant A,PATCH,/api/dashboard/contacts/:id/stage,404,None,None,VERIFIED PASS,Remediated unhandled 500 exception; now returns 404 Not Found
+ISO-CRM-03,DashboardController.getContacts (Filtered),Tenant B -> Tenant A,GET,/api/dashboard/contacts?stage=LOST,200,None,None,VERIFIED PASS,Query filtering preserves strict tenant boundaries
+ISO-MSG-01,ConversationController.getConversationHistory,Tenant B -> Tenant A,GET,/api/conversations/:contactId/messages,404,None,None,VERIFIED PASS,Returns 404; zero message history leaked
+ISO-MSG-02,ConversationController.sendManualReply,Tenant B -> Tenant A,POST,/api/conversations/:contactId/reply,404,None,None,VERIFIED PASS,Returns 404; zero DB messages inserted; Unipile mock not called
+ISO-MSG-03,ConversationController.takeOverConversation,Tenant B -> Tenant A,POST,/api/conversations/:contactId/takeover,404,None,None,VERIFIED PASS,Returns 404; conversationMode remains AUTO / unchanged
+ISO-LNK-01,LinkedInController.checkCheckpointStatus,Tenant B -> Tenant A,GET,/api/linkedin/checkpoint/status/:accountId,404,None,None,VERIFIED PASS,Returns 404; zero 2FA challenge hints leaked
+ISO-LNK-02,LinkedInController.solveCheckpoint,Tenant B -> Tenant A,POST,/api/linkedin/checkpoint/solve,404,None,None,VERIFIED PASS,Returns 404; account not mutated; Unipile mock not called
+ISO-LNK-03,LinkedInController.disconnectAccount,Tenant B -> Tenant B,POST,/api/linkedin/disconnect,200,Own Account Only,None,VERIFIED PASS,Strictly self-scoped; cannot disconnect other tenants
+ISO-ADM-01,AdminMiddleware.requireAdmin,Regular User -> Admin,GET,/api/admin/users,403,None,None,VERIFIED PASS,Returns 403 Forbidden; zero user roster leaked
+ISO-ADM-02,AdminMiddleware.requireAdmin,Regular User -> Admin,POST,/api/admin/daily-agent/run/:userId,403,None,None,VERIFIED PASS,Returns 403 Forbidden; zero agent runs triggered
+ISO-ADM-03,AdminMiddleware.requireAdmin,Regular User -> Admin,POST,/api/admin/settings/unipile,403,None,None,VERIFIED PASS,Returns 403 Forbidden; master settings unmutated
+ISO-WRK-01,ActionQueueService.processDueActions,Worker Execution,INTERNAL,ActionQueueWorker,N/A,Own Account Only,None,VERIFIED PASS,Worker queries and executes actions strictly for owning tenant account
+ISO-WRK-02,UnipileMessageAgentService.processMessageJob,Worker Execution,INTERNAL,MessageAgentWorker,N/A,Own Account Only,None,VERIFIED PASS,Resolves AI config and BYOK key strictly per tenant; zero key sharing

@@ -10,11 +10,15 @@ const __dirname = path.dirname(__filename);
 export async function applyCustomMigrations() {
   console.log("⏳ Applying custom schema migrations (IF NOT EXISTS)...");
   try {
+    // Prevent long migration lock contention
+    await client.unsafe("SET statement_timeout = '60s'; SET lock_timeout = '10s';");
+
     const migrationFiles = [
       "0005_daily_agent_and_webhooks.sql",
       "0006_message_jobs_and_daily_run_keys.sql",
       "0007_user_gemini_api_key.sql",
       "0008_saas_billing.sql",
+      "0009_agent_new_connection_message.sql",
     ];
 
     for (const file of migrationFiles) {

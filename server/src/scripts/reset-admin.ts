@@ -3,19 +3,28 @@ import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import { sql } from "drizzle-orm";
 
-const client = postgres(
-  process.env.DATABASE_URL ||
-    "postgresql://postgres:postgres@localhost:5432/workpilot",
-  { prepare: false }
-);
+import bcrypt from "bcrypt";
+import crypto from "crypto";
+
+const dbUrl = process.env.DATABASE_URL?.trim();
+if (!dbUrl) {
+  console.error("❌ Fatal: DATABASE_URL environment variable is required.");
+  process.exit(1);
+}
+
+const client = postgres(dbUrl, { prepare: false });
 const db = drizzle(client);
 
-// New password: WorkPilot@2026
-const newHash =
-  "$2b$10$A1JW0UvbBnmt.ixDvkumO.m6rNPMYASqijto0kNnPozVFxzIh2iqO";
+const targetEmail = process.env.ADMIN_EMAIL || "admin@example.com";
+const newPassword =
+  process.env.ADMIN_NEW_PASSWORD ||
+  process.argv[2] ||
+  crypto.randomBytes(16).toString("hex");
+
+const newHash = await bcrypt.hash(newPassword, 10);
 
 const result = await db.execute(
-  sql`UPDATE users SET password = ${newHash}, role = 'ADMIN' WHERE email = 'admin@example.com' RETURNING id, name, email, role`
+  sql`UPDATE users SET password = ${newHash}, role = 'ADMIN' WHERE LOWER(email) = LOWER(${targetEmail}) RETURNING id, name, email, role`
 );
 
 if (result.length === 0) {

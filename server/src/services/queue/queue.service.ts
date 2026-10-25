@@ -1,4 +1,5 @@
-import { eq, and, lte, desc, lt } from "drizzle-orm";
+import { eq, and, lte, desc, lt, gte } from "drizzle-orm";
+import { DateTime } from "luxon";
 import { db } from "../../db/index.js";
 import {
   actionQueue,
@@ -15,6 +16,7 @@ export interface EnqueueOptions {
   contactId?: string;
   delayMinutes?: number;
   jitterMinutes?: number;
+  timezone?: string;
 }
 
 export class ActionQueueService {
@@ -51,12 +53,31 @@ export class ActionQueueService {
     let scheduledFor = new Date(baseTime + totalDelayMs);
 
     if (minDelay > 0) {
-      const scheduledHour = scheduledFor.getHours();
-      if (scheduledHour >= 19 || scheduledHour < 8) {
-        if (scheduledHour >= 19) {
-          scheduledFor.setDate(scheduledFor.getDate() + 1);
+      const tz = options.timezone && DateTime.now().setZone(options.timezone).isValid ? options.timezone : undefined;
+      if (tz) {
+        const luxonScheduled = DateTime.fromJSDate(scheduledFor).setZone(tz);
+        const scheduledHour = luxonScheduled.hour;
+        if (scheduledHour >= 19 || scheduledHour < 8) {
+          let adjusted = luxonScheduled;
+          if (scheduledHour >= 19) {
+            adjusted = adjusted.plus({ days: 1 });
+          }
+          adjusted = adjusted.set({
+            hour: 9,
+            minute: Math.floor(Math.random() * 20) + 5,
+            second: 0,
+            millisecond: 0,
+          });
+          scheduledFor = adjusted.toJSDate();
         }
-        scheduledFor.setHours(9, Math.floor(Math.random() * 20) + 5, 0, 0);
+      } else {
+        const scheduledHour = scheduledFor.getHours();
+        if (scheduledHour >= 19 || scheduledHour < 8) {
+          if (scheduledHour >= 19) {
+            scheduledFor.setDate(scheduledFor.getDate() + 1);
+          }
+          scheduledFor.setHours(9, Math.floor(Math.random() * 20) + 5, 0, 0);
+        }
       }
     }
 
@@ -89,11 +110,24 @@ export class ActionQueueService {
     }>;
   }> {
     const now = new Date();
+    // Reclaim transient stale locks
     await db.update(actionQueue).set({ status: "QUEUED", lockedAt: null })
       .where(and(
         eq(actionQueue.status, "PROCESSING"),
         lt(actionQueue.lockedAt, new Date(now.getTime() - 5 * 60 * 1000)),
         lt(actionQueue.attempts, 3),
+      ));
+
+    // Mark exhausted stale locks as FAILED to prevent orphaned PROCESSING jobs
+    await db.update(actionQueue).set({
+      status: "FAILED",
+      lockedAt: null,
+      errorMessage: "Job execution timed out after maximum retry attempts.",
+    })
+      .where(and(
+        eq(actionQueue.status, "PROCESSING"),
+        lt(actionQueue.lockedAt, new Date(now.getTime() - 5 * 60 * 1000)),
+        gte(actionQueue.attempts, 3),
       ));
     const condition = userId
       ? and(
@@ -163,6 +197,7 @@ export class ActionQueueService {
         continue;
       }
 
+      let providerSuccess = false;
       try {
         const [userAccount] = await db
           .select()
@@ -180,6 +215,26 @@ export class ActionQueueService {
           );
         }
 
+        // Validate that target contact belongs to the job owner before provider side effects
+        if (job.contactId) {
+          const [ownedContact] = await db
+            .select({ id: contacts.id })
+            .from(contacts)
+            .where(
+              and(
+                eq(contacts.id, job.contactId),
+                eq(contacts.userId, job.userId),
+              ),
+            )
+            .limit(1);
+
+          if (!ownedContact) {
+            throw new Error(
+              `Target contact ${job.contactId} not found or does not belong to user ${job.userId}.`,
+            );
+          }
+        }
+
         if (job.actionType === "CONNECT") {
           const result = await linkedInConnectionService.sendConnectionRequest(
             payload.person,
@@ -189,6 +244,7 @@ export class ActionQueueService {
           if (!result.success) {
             throw new Error(result.message || "Failed to send connection request");
           }
+          providerSuccess = true;
           if (job.contactId) {
             await db
               .update(contacts)
@@ -197,7 +253,12 @@ export class ActionQueueService {
                 connectionSentAt: new Date(),
                 updatedAt: new Date(),
               })
-              .where(eq(contacts.id, job.contactId));
+              .where(
+                and(
+                  eq(contacts.id, job.contactId),
+                  eq(contacts.userId, job.userId),
+                ),
+              );
           }
         } else if (job.actionType === "MESSAGE") {
           const recipientId = payload.recipientId || payload.person?.linkedin_id || payload.person?.profile_url || payload.person?.name;
@@ -215,11 +276,17 @@ export class ActionQueueService {
           if (!result.success) {
             throw new Error(result.message || "Failed to send direct message");
           }
+          providerSuccess = true;
           if (job.contactId) {
             await db
               .update(contacts)
               .set({ lastMessageSentAt: new Date(), updatedAt: new Date() })
-              .where(eq(contacts.id, job.contactId));
+              .where(
+                and(
+                  eq(contacts.id, job.contactId),
+                  eq(contacts.userId, job.userId),
+                ),
+              );
           }
         } else if (job.actionType === "REACT") {
           await linkedInPostService.reactToPost(
@@ -227,12 +294,14 @@ export class ActionQueueService {
             payload.reactionType,
             activeAccountId,
           );
+          providerSuccess = true;
         } else if (job.actionType === "COMMENT") {
           await linkedInPostService.commentOnPost(
             payload.postId,
             payload.comment,
             activeAccountId,
           );
+          providerSuccess = true;
         }
 
         await db
@@ -246,21 +315,27 @@ export class ActionQueueService {
           status: "COMPLETED",
         });
       } catch (err: any) {
+        const isAmbiguousProviderOutcome = providerSuccess;
         await db
           .update(actionQueue)
           .set({
-            status: "FAILED",
-            errorMessage: err.message,
+            status: isAmbiguousProviderOutcome ? "COMPLETED" : "FAILED",
+            errorMessage: isAmbiguousProviderOutcome
+              ? `Provider action succeeded, but secondary record update failed: ${err.message}`
+              : err.message,
             attempts: job.attempts + 1,
             lockedAt: null,
+            executedAt: isAmbiguousProviderOutcome ? new Date() : null,
           })
           .where(eq(actionQueue.id, job.id));
 
         results.push({
           jobId: job.id,
           action: job.actionType,
-          status: "FAILED",
-          reason: err.message,
+          status: isAmbiguousProviderOutcome ? "COMPLETED" : "FAILED",
+          reason: isAmbiguousProviderOutcome
+            ? `Provider action succeeded, but secondary record update failed: ${err.message}`
+            : err.message,
         });
       }
     }

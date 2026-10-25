@@ -403,24 +403,119 @@ export class DailyAgentService {
 
     // Insert atomic run record into daily_agent_runs
     const activeRunKey = isManualTrigger ? `manual:${userId}:${Date.now()}` : runKey;
-    const [currentRun] = await db
-      .insert(dailyAgentRuns)
-      .values({
-        userId,
-        runKey: activeRunKey,
-        scheduledFor: startedAt,
-        status: "RUNNING",
-        startedAt,
-      })
-      .onConflictDoUpdate({
-        target: dailyAgentRuns.runKey,
-        set: {
+    let currentRun: any;
+
+    if (isManualTrigger) {
+      [currentRun] = await db
+        .insert(dailyAgentRuns)
+        .values({
+          userId,
+          runKey: activeRunKey,
+          scheduledFor: startedAt,
           status: "RUNNING",
           startedAt,
-          errorMessage: null,
-        },
-      })
-      .returning();
+        })
+        .returning();
+    } else {
+      const [claimed] = await db
+        .insert(dailyAgentRuns)
+        .values({
+          userId,
+          runKey: activeRunKey,
+          scheduledFor: startedAt,
+          status: "RUNNING",
+          startedAt,
+        })
+        .onConflictDoNothing()
+        .returning();
+
+      if (!claimed) {
+        // Run key already exists in database; inspect its active status
+        const [existing] = await db
+          .select()
+          .from(dailyAgentRuns)
+          .where(eq(dailyAgentRuns.runKey, activeRunKey))
+          .limit(1);
+
+        if (
+          existing &&
+          (existing.status === "COMPLETED" ||
+            existing.status === "DAILY_LIMIT_REACHED" ||
+            existing.status === "PARTIAL" ||
+            (existing.status === "RUNNING" && existing.startedAt >= staleLockThreshold))
+        ) {
+          log("info", `Daily run for ${localDateStr} is already claimed/active (Status: ${existing?.status}). Skipping duplicate execution.`);
+          return {
+            runId: existing.id,
+            userId,
+            runKey: activeRunKey,
+            scheduledFor: existing.scheduledFor,
+            status: "SKIPPED",
+            startedAt,
+            completedAt: new Date(),
+            remainingCapacityAtStart: 0,
+            prospectsDiscovered: 0,
+            prospectsQualified: 0,
+            prospectsReviewed: 0,
+            strongMatchesFound: 0,
+            connectionRequestsSent: 0,
+            connectionRequestsFailed: 0,
+            followUpsSent: 0,
+            repliesHandled: 0,
+            skippedCount: 1,
+            errorsCount: 0,
+            summary: `Skipped: daily run for ${localDateStr} was already claimed (${existing?.status}).`,
+            logDetails: logs,
+          };
+        }
+
+        // Stale run recovery: atomic CAS claim on the stale record
+        if (existing) {
+          const [reclaimed] = await db
+            .update(dailyAgentRuns)
+            .set({
+              status: "RUNNING",
+              startedAt,
+              errorMessage: null,
+            })
+            .where(
+              and(
+                eq(dailyAgentRuns.id, existing.id),
+                eq(dailyAgentRuns.status, existing.status),
+              ),
+            )
+            .returning();
+          currentRun = reclaimed;
+        }
+
+        if (!currentRun) {
+          log("warn", `Could not acquire atomic daily run lock for ${activeRunKey}. Another worker claimed it.`);
+          return {
+            runId: existing?.id || "run_" + Date.now(),
+            userId,
+            runKey: activeRunKey,
+            status: "SKIPPED",
+            startedAt,
+            completedAt: new Date(),
+            remainingCapacityAtStart: 0,
+            prospectsDiscovered: 0,
+            prospectsQualified: 0,
+            prospectsReviewed: 0,
+            strongMatchesFound: 0,
+            connectionRequestsSent: 0,
+            connectionRequestsFailed: 0,
+            followUpsSent: 0,
+            repliesHandled: 0,
+            skippedCount: 1,
+            errorsCount: 0,
+            summary: "Execution skipped: another daily agent run claimed the lock.",
+            logDetails: logs,
+          };
+        }
+      } else {
+        currentRun = claimed;
+      }
+    }
 
     const runId = currentRun?.id || "run_" + Date.now();
 
@@ -919,8 +1014,15 @@ export class DailyAgentService {
     const nowInZone = DateTime.now().setZone(safeZone);
 
     const [hoursStr, minutesStr] = (preferredTime || "04:00").split(":");
-    const targetHours = parseInt(hoursStr || "4", 10);
-    const targetMinutes = parseInt(minutesStr || "0", 10);
+    let targetHours = parseInt(hoursStr || "4", 10);
+    let targetMinutes = parseInt(minutesStr || "0", 10);
+
+    if (isNaN(targetHours) || targetHours < 0 || targetHours > 23) {
+      targetHours = 4;
+    }
+    if (isNaN(targetMinutes) || targetMinutes < 0 || targetMinutes > 59) {
+      targetMinutes = 0;
+    }
 
     let candidate = nowInZone.set({
       hour: targetHours,

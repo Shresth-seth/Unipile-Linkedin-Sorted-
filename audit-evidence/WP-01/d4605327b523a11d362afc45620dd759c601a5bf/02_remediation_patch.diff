@@ -1,0 +1,517 @@
+diff --git a/.dockerignore b/.dockerignore
+index bd2e299..9b0f559 100644
+--- a/.dockerignore
++++ b/.dockerignore
+@@ -6,3 +6,15 @@
+ **/*.tsbuildinfo
+ **/.env*
+ !**/.env.example
++!**/.env.production.example
++**/*.pem
++**/*.key
++**/*.pkcs12
++**/*.pfx
++**/*.id_rsa*
++**/*.id_ed25519*
++**/deploy/keys
++**/keys
++**/secrets
++**/*.tar.gz
++**/*.tgz
+diff --git a/.github/workflows/deploy-production.yml b/.github/workflows/deploy-production.yml
+index c1a326a..0ff2836 100644
+--- a/.github/workflows/deploy-production.yml
++++ b/.github/workflows/deploy-production.yml
+@@ -37,6 +37,16 @@ jobs:
+             server/package-lock.json
+             client/package-lock.json
+ 
++      # --- Secret Scanning & Credential Exposure Prevention ---
++      - name: Secret Scanning Validation
++        run: node scripts/scan-secrets.mjs
++
++      - name: Verify Secret Scanner Regression
++        run: node scripts/test-secret-scanner.mjs
++
++      - name: Verify Production Config Validation & Error Redaction
++        run: node scripts/test-config-validation.mjs
++
+       # --- Server Validation ---
+       - name: Install Backend Dependencies
+         working-directory: ./server
+@@ -70,6 +80,7 @@ jobs:
+       - name: Log CI Verification Status
+         run: |
+           echo "### CI Verification Passed" >> $GITHUB_STEP_SUMMARY
++          echo "✓ Automated secret scan passed (no committed credentials)" >> $GITHUB_STEP_SUMMARY
+           echo "✓ Backend typecheck & build succeeded" >> $GITHUB_STEP_SUMMARY
+           echo "✓ Frontend lint, typecheck & production build succeeded" >> $GITHUB_STEP_SUMMARY
+ 
+diff --git a/.gitignore b/.gitignore
+index d770750..7810464 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -162,7 +162,22 @@ vite.config.ts.timestamp-*
+ /build
+ 
+ .DS_Store
++# Security, Private Keys & Certificates
+ *.pem
++*.key
++*.pkcs12
++*.pfx
++*.id_rsa
++*.id_rsa.pub
++*.id_ed25519
++*.id_ed25519.pub
++deploy/keys/
++keys/
++secrets/
++
++# Packaging archives
++*.tar.gz
++deploy.tar.gz
+ 
+ npm-debug.log*
+ yarn-debug.log*
+diff --git a/client/.dockerignore b/client/.dockerignore
+index 609cda1..602a6e2 100644
+--- a/client/.dockerignore
++++ b/client/.dockerignore
+@@ -2,7 +2,16 @@ node_modules
+ .next
+ .git
+ .gitignore
+-.env*.local
++.env*
++!.env.example
+ npm-debug.log*
+ yarn-debug.log*
+ yarn-error.log*
++*.pem
++*.key
++*.pkcs12
++*.pfx
++*.id_rsa*
++*.id_ed25519*
++keys/
++deploy/keys/
+diff --git a/deploy.tar.gz b/deploy.tar.gz
+deleted file mode 100644
+index a699b01..0000000
+Binary files a/deploy.tar.gz and /dev/null differ
+diff --git a/deploy/aws/deploy-remote.ps1 b/deploy/aws/deploy-remote.ps1
+index 56c6d89..1c05284 100644
+--- a/deploy/aws/deploy-remote.ps1
++++ b/deploy/aws/deploy-remote.ps1
+@@ -1,11 +1,23 @@
+ # ==============================================================================
+-# WorkPilot - Automated Remote Deployment to AWS EC2 (13.53.169.49)
++# WorkPilot - Automated Remote Deployment to AWS EC2
+ # ==============================================================================
+ param(
+-    [string]$TargetIP = "13.53.169.49",
+-    [string]$KeyFile = "[REDACTED_LOCAL_PATH]\linkdin  brain.pem"
++    [string]$TargetIP = $env:EC2_TARGET_IP,
++    [string]$KeyFile = $env:EC2_SSH_KEY_PATH,
++    [string]$EnvFile = $env:PRODUCTION_ENV_FILE,
++    [string]$RepoUrl = ($env:GIT_REPO_URL ? $env:GIT_REPO_URL : "https://github.com/YuvrajKhare2025/unipile-linkedin-automation.git")
+ )
+ 
++if (-not $TargetIP) {
++    Write-Host "[ERROR] Target IP is required. Provide -TargetIP or set EC2_TARGET_IP environment variable." -ForegroundColor Red
++    exit 1
++}
++
++if (-not $KeyFile) {
++    Write-Host "[ERROR] SSH KeyFile is required. Provide -KeyFile or set EC2_SSH_KEY_PATH environment variable." -ForegroundColor Red
++    exit 1
++}
++
+ Write-Host "==============================================================================" -ForegroundColor Cyan
+ Write-Host "[DEPLOY] Deploying WorkPilot to AWS EC2: $TargetIP" -ForegroundColor Cyan
+ Write-Host "==============================================================================" -ForegroundColor Cyan
+@@ -46,13 +58,17 @@ Write-Host "[OK] Port 22 reachable! Proceeding with full automated setup on EC2.
+ 
+ # Step 1: Clone or update repo on EC2 and run setup-ec2.sh
+ Write-Host "[STEP 1] Initializing EC2 instance packages, 4GB swap, and Docker..." -ForegroundColor Cyan
+-$remoteInit = "sudo mkdir -p /home/ubuntu/app && sudo chown -R ubuntu:ubuntu /home/ubuntu/app && if [ ! -d /home/ubuntu/app/.git ]; then git clone https://github.com/201Harsh/WORKPILOT.git /home/ubuntu/app; else cd /home/ubuntu/app && git fetch origin main && git reset --hard origin/main; fi && cd /home/ubuntu/app && sudo bash deploy/aws/setup-ec2.sh"
++$remoteInit = "sudo mkdir -p /home/ubuntu/app && sudo chown -R ubuntu:ubuntu /home/ubuntu/app && if [ ! -d /home/ubuntu/app/.git ]; then git clone $RepoUrl /home/ubuntu/app; else cd /home/ubuntu/app && git fetch origin main && git reset --hard origin/main; fi && cd /home/ubuntu/app && sudo bash deploy/aws/setup-ec2.sh"
+ 
+ ssh -i "$KeyFile" -o StrictHostKeyChecking=no ubuntu@$TargetIP $remoteInit
+ 
+-# Step 2: Upload production .env
+-Write-Host "[STEP 2] Transferring production environment configuration (.env)..." -ForegroundColor Cyan
+-scp -i "$KeyFile" -o StrictHostKeyChecking=no "e:\WORKPILOT-main\.env.production" "ubuntu@${TargetIP}:/home/ubuntu/app/.env"
++# Step 2: Upload production .env (if specified)
++if ($EnvFile -and (Test-Path $EnvFile)) {
++    Write-Host "[STEP 2] Transferring production environment configuration (.env)..." -ForegroundColor Cyan
++    scp -i "$KeyFile" -o StrictHostKeyChecking=no "$EnvFile" "ubuntu@${TargetIP}:/home/ubuntu/app/.env"
++} else {
++    Write-Host "[STEP 2] No local -EnvFile specified. Verifying /home/ubuntu/app/.env on remote instance..." -ForegroundColor Yellow
++}
+ 
+ # Step 3: Run production deployment
+ Write-Host "[STEP 3] Launching WorkPilot Docker containers and Nginx reverse proxy..." -ForegroundColor Cyan
+diff --git a/package.json b/package.json
+index 1d00508..629a091 100644
+--- a/package.json
++++ b/package.json
+@@ -6,7 +6,11 @@
+     "dev": "concurrently --kill-others \"npm run dev:client\" \"npm run dev:server\"",
+     "dev:client": "cd client && npm run dev",
+     "dev:server": "cd server && npm run dev",
+-    "install:all": "cd client && npm install && cd ../server && npm install"
++    "install:all": "cd client && npm install && cd ../server && npm install",
++    "security:scan": "node scripts/scan-secrets.mjs",
++    "test:security-scan": "node scripts/test-secret-scanner.mjs",
++    "test:config-validation": "node scripts/test-config-validation.mjs",
++    "test:all-security": "npm run security:scan && npm run test:security-scan && npm run test:config-validation"
+   },
+   "devDependencies": {
+     "concurrently": "^9.1.2"
+diff --git a/server/.dockerignore b/server/.dockerignore
+index 514e5d2..1c8a8ba 100644
+--- a/server/.dockerignore
++++ b/server/.dockerignore
+@@ -1,7 +1,16 @@
+ node_modules
+ dist
+-.env
++.env*
++!.env.example
+ *.log
+ npm-debug.log*
+ .git
+ .gitignore
++*.pem
++*.key
++*.pkcs12
++*.pfx
++*.id_rsa*
++*.id_ed25519*
++keys/
++deploy/keys/
+diff --git a/server/check-role.cjs b/server/check-role.cjs
+index 0a43128..808e7b5 100644
+--- a/server/check-role.cjs
++++ b/server/check-role.cjs
+@@ -1,6 +1,24 @@
+-const { Pool } = require('pg');
+-const pool = new Pool({ connectionString: 'postgresql://neondb_owner:npg_[REDACTED_PASSWORD]@ep-little-recipe-ay9d5cov-pooler.c-5.us-east-2.aws.neon.tech/neondb?sslmode=require' });
+-pool.query("SELECT email, role FROM users WHERE email='admin@example.com'", (err, res) => {
++try { require('dotenv').config(); } catch (e) {}
++let Pool;
++try {
++  Pool = require('pg').Pool;
++} catch (e) {}
++
++const connectionString = process.env.DATABASE_URL && process.env.DATABASE_URL.trim();
++if (!connectionString) {
++  console.error("❌ Fatal: DATABASE_URL environment variable is required.");
++  process.exit(1);
++}
++
++const pool = new Pool({ connectionString });
++const targetEmail = process.env.CHECK_EMAIL || 'admin@example.com';
++
++pool.query("SELECT email, role FROM users WHERE email = $1", [targetEmail], (err, res) => {
++  if (err) {
++    console.error("Query failed:", err.message);
++    process.exit(1);
++  }
+   console.log(res.rows);
++  pool.end();
+   process.exit(0);
+ });
+diff --git a/server/check_unipile.mjs b/server/check_unipile.mjs
+index 0038017..9432274 100644
+--- a/server/check_unipile.mjs
++++ b/server/check_unipile.mjs
+@@ -1,25 +1,54 @@
+-import postgres from 'postgres';
++try { await import('dotenv/config'); } catch (e) {}
+ 
+-const sql = postgres('postgresql://neondb_owner:npg_[REDACTED_PASSWORD]@ep-little-recipe-ay9d5cov-pooler.c-5.us-east-2.aws.neon.tech/neondb?sslmode=require');
++const connectionString = process.env.DATABASE_URL?.trim();
++if (!connectionString) {
++  console.error("❌ Fatal: DATABASE_URL environment variable is required.");
++  process.exit(1);
++}
++
++let postgres;
++try {
++  postgres = (await import('postgres')).default;
++} catch (e) {
++  console.error("❌ Missing postgres driver. Run npm install.");
++  process.exit(1);
++}
++
++const sql = postgres(connectionString);
+ 
+ async function test() {
+   const settings = await sql`SELECT key, value FROM system_settings`;
+   console.log('--- SYSTEM SETTINGS IN DB ---');
+-  console.log(settings);
++  console.log(
++    settings.map((s) => ({
++      key: s.key,
++      value: s.key.toLowerCase().includes('key') || s.key.toLowerCase().includes('secret')
++        ? '[REDACTED]'
++        : s.value,
++    }))
++  );
+ 
+   const unipileAccounts = await sql`SELECT id, user_id, unipile_account_id, linkedin_name, is_connected, health_status FROM linkedin_accounts`;
+   console.log('--- LINKEDIN ACCOUNTS IN DB ---');
+-  console.log(unipileAccounts);
+-
+-  console.log('--- UPDATING ADMIN PASSWORD ---');
+-  const newHash = "$2b$10$A1JW0UvbBnmt.ixDvkumO.m6rNPMYASqijto0kNnPozVFxzIh2iqO"; // [REDACTED_PASSWORD]
+-  const pwdUpdated = await sql`
+-    UPDATE users
+-    SET password = ${newHash}, role = 'ADMIN', updated_at = NOW()
+-    WHERE email = 'admin@workpilot.co.in'
+-    RETURNING id, name, email, role
+-  `;
+-  console.log('Admin user:', pwdUpdated);
++  console.log(
++    unipileAccounts.map((a) => ({
++      ...a,
++      unipile_account_id: a.unipile_account_id
++        ? a.unipile_account_id.substring(0, 4) + '...'
++        : null,
++    }))
++  );
++
++  if (process.env.ADMIN_NEW_HASH) {
++    console.log('--- UPDATING ADMIN PASSWORD FROM ENVIRONMENT HASH ---');
++    const pwdUpdated = await sql`
++      UPDATE users
++      SET password = ${process.env.ADMIN_NEW_HASH}, role = 'ADMIN', updated_at = NOW()
++      WHERE email = 'admin@workpilot.co.in'
++      RETURNING id, name, email, role
++    `;
++    console.log('Admin user updated:', pwdUpdated);
++  }
+ 
+   await sql.end();
+   process.exit(0);
+diff --git a/server/get-accounts.ts b/server/get-accounts.ts
+index fed88a3..6124892 100644
+--- a/server/get-accounts.ts
++++ b/server/get-accounts.ts
+@@ -3,7 +3,16 @@ import { linkedinAccounts } from "./src/db/schema.js";
+ 
+ async function run() {
+   const accounts = await db.select().from(linkedinAccounts);
+-  console.log(JSON.stringify(accounts, null, 2));
++  const sanitized = accounts.map((acc) => ({
++    id: acc.id,
++    userId: acc.userId,
++    linkedinName: acc.linkedinName,
++    isConnected: acc.isConnected,
++    healthStatus: acc.healthStatus,
++    unipileAccountId: acc.unipileAccountId ? `${acc.unipileAccountId.substring(0, 4)}...` : null,
++    encryptedCredentials: acc.encryptedCredentials ? "[ENCRYPTED]" : null,
++  }));
++  console.log(JSON.stringify(sanitized, null, 2));
+   process.exit(0);
+ }
+ run();
+diff --git a/server/src/db/index.ts b/server/src/db/index.ts
+index 48a703f..b814907 100644
+--- a/server/src/db/index.ts
++++ b/server/src/db/index.ts
+@@ -3,9 +3,15 @@ import { drizzle } from "drizzle-orm/postgres-js";
+ import postgres from "postgres";
+ import * as schema from "./schema.js";
+ 
+-const connectionString =
+-  process.env.DATABASE_URL ||
+-  "postgresql://postgres:postgres@localhost:5432/workpilot";
++const connectionString = process.env.DATABASE_URL?.trim();
++if (!connectionString) {
++  if (process.env.NODE_ENV === "production") {
++    throw new Error("DATABASE_URL environment variable is mandatory in production.");
++  }
++}
+ 
+-export const client = postgres(connectionString, { prepare: false });
++export const client = postgres(
++  connectionString || "postgresql://postgres:postgres@localhost:5432/workpilot",
++  { prepare: false }
++);
+ export const db = drizzle(client, { schema });
+diff --git a/server/src/scripts/assign-admin.ts b/server/src/scripts/assign-admin.ts
+index 31f0bd0..e48529b 100644
+--- a/server/src/scripts/assign-admin.ts
++++ b/server/src/scripts/assign-admin.ts
+@@ -4,15 +4,22 @@ import postgres from "postgres";
+ import { sql } from "drizzle-orm";
+ import bcrypt from "bcrypt";
+ 
+-const client = postgres(
+-  process.env.DATABASE_URL ||
+-    "postgresql://neondb_owner:npg_[REDACTED_PASSWORD]@ep-little-recipe-ay9d5cov-pooler.c-5.us-east-2.aws.neon.tech/neondb?sslmode=require",
+-  { prepare: false }
+-);
++import crypto from "crypto";
++
++const dbUrl = process.env.DATABASE_URL?.trim();
++if (!dbUrl) {
++  console.error("❌ Fatal: DATABASE_URL environment variable is required.");
++  process.exit(1);
++}
++
++const client = postgres(dbUrl, { prepare: false });
+ const db = drizzle(client);
+ 
+-const targetEmail = "admin@workpilot.co.in";
+-const defaultPassword = "[REDACTED_DEFAULT_PASSWORD]";
++const targetEmail = process.env.ADMIN_EMAIL || process.argv[2] || "admin@workpilot.co.in";
++const adminPassword =
++  process.env.ADMIN_INITIAL_PASSWORD ||
++  process.argv[3] ||
++  crypto.randomBytes(16).toString("hex");
+ 
+ async function main() {
+   console.log(`Checking user: ${targetEmail}...`);
+@@ -29,17 +36,19 @@ async function main() {
+     );
+     console.log("✅ User successfully updated to ADMIN:", updated[0]);
+   } else {
+-    console.log(`User ${targetEmail} not found. Creating new ADMIN user with password: ${defaultPassword}...`);
+-    const hashedPassword = await bcrypt.hash(defaultPassword, 10);
++    console.log(`User ${targetEmail} not found. Creating new ADMIN user...`);
++    const hashedPassword = await bcrypt.hash(adminPassword, 10);
+     const created = await db.execute(
+       sql`INSERT INTO users (name, email, password, role, created_at, updated_at)
+           VALUES ('WorkPilot Admin', ${targetEmail}, ${hashedPassword}, 'ADMIN', NOW(), NOW())
+           RETURNING id, name, email, role`
+     );
+     console.log("✅ New ADMIN user created:", created[0]);
+-    console.log(`🔑 Login Credentials:
+-       Email:    ${targetEmail}
+-       Password: ${defaultPassword}`);
++    if (process.env.ADMIN_INITIAL_PASSWORD || process.argv[3]) {
++      console.log(`🔑 Admin user initialized with environment-supplied password.`);
++    } else {
++      console.log(`🔑 One-time generated password (set ADMIN_INITIAL_PASSWORD to customize): ${adminPassword}`);
++    }
+   }
+ 
+   // Also list all admin users
+diff --git a/server/src/scripts/clear-all-users.ts b/server/src/scripts/clear-all-users.ts
+index 2a5ce4f..3f8e9f0 100644
+--- a/server/src/scripts/clear-all-users.ts
++++ b/server/src/scripts/clear-all-users.ts
+@@ -3,9 +3,11 @@ import { drizzle } from "drizzle-orm/postgres-js";
+ import postgres from "postgres";
+ import { sql } from "drizzle-orm";
+ 
+-const connectionString =
+-  process.env.DATABASE_URL ||
+-  "postgresql://neondb_owner:npg_[REDACTED_PASSWORD]@ep-little-recipe-ay9d5cov-pooler.c-5.us-east-2.aws.neon.tech/neondb?sslmode=require";
++const connectionString = process.env.DATABASE_URL?.trim();
++if (!connectionString) {
++  console.error("❌ Fatal: DATABASE_URL environment variable is required.");
++  process.exit(1);
++}
+ 
+ const client = postgres(connectionString, { prepare: false });
+ const db = drizzle(client);
+diff --git a/server/src/scripts/reset-admin.ts b/server/src/scripts/reset-admin.ts
+index 6b3610f..6f62870 100644
+--- a/server/src/scripts/reset-admin.ts
++++ b/server/src/scripts/reset-admin.ts
+@@ -3,19 +3,28 @@ import { drizzle } from "drizzle-orm/postgres-js";
+ import postgres from "postgres";
+ import { sql } from "drizzle-orm";
+ 
+-const client = postgres(
+-  process.env.DATABASE_URL ||
+-    "postgresql://postgres:postgres@localhost:5432/workpilot",
+-  { prepare: false }
+-);
++import bcrypt from "bcrypt";
++import crypto from "crypto";
++
++const dbUrl = process.env.DATABASE_URL?.trim();
++if (!dbUrl) {
++  console.error("❌ Fatal: DATABASE_URL environment variable is required.");
++  process.exit(1);
++}
++
++const client = postgres(dbUrl, { prepare: false });
+ const db = drizzle(client);
+ 
+-// New password: [REDACTED_PASSWORD]
+-const newHash =
+-  "$2b$10$A1JW0UvbBnmt.ixDvkumO.m6rNPMYASqijto0kNnPozVFxzIh2iqO";
++const targetEmail = process.env.ADMIN_EMAIL || "admin@example.com";
++const newPassword =
++  process.env.ADMIN_NEW_PASSWORD ||
++  process.argv[2] ||
++  crypto.randomBytes(16).toString("hex");
++
++const newHash = await bcrypt.hash(newPassword, 10);
+ 
+ const result = await db.execute(
+-  sql`UPDATE users SET password = ${newHash}, role = 'ADMIN' WHERE email = 'admin@example.com' RETURNING id, name, email, role`
++  sql`UPDATE users SET password = ${newHash}, role = 'ADMIN' WHERE LOWER(email) = LOWER(${targetEmail}) RETURNING id, name, email, role`
+ );
+ 
+ if (result.length === 0) {
+diff --git a/server/src/utils/error.util.ts b/server/src/utils/error.util.ts
+index d2ac874..848fec0 100644
+--- a/server/src/utils/error.util.ts
++++ b/server/src/utils/error.util.ts
+@@ -34,7 +34,19 @@ export function isInternalDbError(error: any): boolean {
+ }
+ 
+ /**
+- * Returns a safe, user-facing error message that never exposes internals.
++ * Scrubs passwords, bearer tokens, API keys, and connection strings from arbitrary text.
++ */
++export function redactSensitiveText(text: string): string {
++  if (!text || typeof text !== "string") return "";
++  return text
++    .replace(/(postgres(?:ql)?:\/\/[^:]+:)[^@]+(@)/gi, "$1[REDACTED]$2")
++    .replace(/(bearer\s+)[a-z0-9_\-\.]+/gi, "$1[REDACTED]")
++    .replace(/(api[_-]?key[:=]\s*)[a-z0-9_\-\.]+/gi, "$1[REDACTED]")
++    .replace(/(password[:=]\s*)[^\s,;&]+/gi, "$1[REDACTED]");
++}
++
++/**
++ * Returns a safe, user-facing error message that never exposes internals or credentials.
+  *
+  * @param error        The caught error object.
+  * @param fallback     Generic fallback message for this specific operation.
+@@ -48,5 +60,6 @@ export function safeErrorMessage(
+   if (isInternalDbError(error)) {
+     return dbFallback;
+   }
+-  return error?.message || fallback;
++  const rawMsg = error?.message || fallback;
++  return redactSensitiveText(rawMsg);
+ }
+diff --git a/server/test-batch-dm.mts b/server/test-batch-dm.mts
+index 8680a03..8e61977 100644
+--- a/server/test-batch-dm.mts
++++ b/server/test-batch-dm.mts
+@@ -1,6 +1,12 @@
+-﻿import { unipileClient } from './src/services/unipile/unipile.client.ts';
++import { unipileClient } from './src/services/unipile/unipile.client.ts';
+ 
+-const ACCOUNT_ID = '84K4FddgRp-[REDACTED]';
++import 'dotenv/config';
++
++const ACCOUNT_ID = process.env.UNIPILE_ACCOUNT_ID || process.argv[2];
++if (!ACCOUNT_ID) {
++  console.error("❌ Fatal: UNIPILE_ACCOUNT_ID environment variable or CLI argument is required.");
++  process.exit(1);
++}
+ const MESSAGE = 'Hi {name}, reaching out via WorkPilot! I am building an AI outreach tool and would love your quick feedback. Hope things are going great!';
+ 
+ async function main() {

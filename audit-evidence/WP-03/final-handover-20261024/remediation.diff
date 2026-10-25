@@ -1,0 +1,97 @@
+diff --git a/server/src/controllers/dashboard.controller.ts b/server/src/controllers/dashboard.controller.ts
+index aae37a3..0c3a9d9 100644
+--- a/server/src/controllers/dashboard.controller.ts
++++ b/server/src/controllers/dashboard.controller.ts
+@@ -4,6 +4,7 @@ import { db } from "../db/index.js";
+ import { crmService } from "../services/crm/crm.service.js";
+ import { accountSafetyService } from "../services/safety/safety.service.js";
+ import { AuthRequest } from "../middlewares/auth.middleware.js";
++import { NotFoundError, isInternalDbError, safeErrorMessage } from "../utils/error.util.js";
+ 
+ export class DashboardController {
+   private getAuthenticatedUserId(req: Request): string | null {
+@@ -98,7 +99,15 @@ export class DashboardController {
+       res.status(200).json({ success: true, data: updated });
+     } catch (error: any) {
+       console.error("Failed to update contact stage:", error);
+-      res.status(500).json({ success: false, error: error.message });
++      if (error instanceof NotFoundError || error?.name === "NotFoundError") {
++        res.status(404).json({ success: false, error: error.message });
++        return;
++      }
++      if (!isInternalDbError(error) && error?.message && error.message.toLowerCase().includes("contact") && error.message.toLowerCase().includes("not found")) {
++        res.status(404).json({ success: false, error: error.message });
++        return;
++      }
++      res.status(500).json({ success: false, error: safeErrorMessage(error, "Failed to update contact stage") });
+     }
+   }
+ 
+diff --git a/server/src/services/crm/crm.service.ts b/server/src/services/crm/crm.service.ts
+index 6159d8f..30c1645 100644
+--- a/server/src/services/crm/crm.service.ts
++++ b/server/src/services/crm/crm.service.ts
+@@ -1,6 +1,7 @@
+ import { eq, and, desc } from "drizzle-orm";
+ import { db } from "../../db/index.js";
+ import { contacts, Contact } from "../../db/schema.js";
++import { NotFoundError } from "../../utils/error.util.js";
+ 
+ export interface FunnelStats {
+   totalLeads: number;
+@@ -136,7 +137,7 @@ export class CrmService {
+       .returning();
+ 
+     if (!updated) {
+-      throw new Error(`Contact ${contactId} not found.`);
++      throw new NotFoundError(`Contact ${contactId} not found.`);
+     }
+ 
+     return updated;
+diff --git a/server/src/utils/error.util.ts b/server/src/utils/error.util.ts
+index d2ac874..24bcba0 100644
+--- a/server/src/utils/error.util.ts
++++ b/server/src/utils/error.util.ts
+@@ -34,7 +34,19 @@ export function isInternalDbError(error: any): boolean {
+ }
+ 
+ /**
+- * Returns a safe, user-facing error message that never exposes internals.
++ * Scrubs passwords, bearer tokens, API keys, and connection strings from arbitrary text.
++ */
++export function redactSensitiveText(text: string): string {
++  if (!text || typeof text !== "string") return "";
++  return text
++    .replace(/(postgres(?:ql)?:\/\/[^:]+:)[^@]+(@)/gi, "$1[REDACTED]$2")
++    .replace(/(bearer\s+)[a-z0-9_\-\.]+/gi, "$1[REDACTED]")
++    .replace(/(api[_-]?key[:=]\s*)[a-z0-9_\-\.]+/gi, "$1[REDACTED]")
++    .replace(/(password[:=]\s*)[^\s,;&]+/gi, "$1[REDACTED]");
++}
++
++/**
++ * Returns a safe, user-facing error message that never exposes internals or credentials.
+  *
+  * @param error        The caught error object.
+  * @param fallback     Generic fallback message for this specific operation.
+@@ -48,5 +60,20 @@ export function safeErrorMessage(
+   if (isInternalDbError(error)) {
+     return dbFallback;
+   }
+-  return error?.message || fallback;
++  const rawMsg = error?.message || fallback;
++  return redactSensitiveText(rawMsg);
++}
++
++/**
++ * Typed domain error representing an entity or resource that does not exist or is inaccessible.
++ * Enables controllers to safely return HTTP 404 without relying on brittle substring matching.
++ */
++export class NotFoundError extends Error {
++  public readonly statusCode = 404;
++  constructor(message: string) {
++    super(message);
++    this.name = "NotFoundError";
++    Object.setPrototypeOf(this, new.target.prototype);
++  }
+ }
++

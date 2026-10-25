@@ -1,6 +1,12 @@
-﻿import { unipileClient } from './src/services/unipile/unipile.client.ts';
+import { unipileClient } from './src/services/unipile/unipile.client.ts';
 
-const ACCOUNT_ID = '84K4FddgRp-PY2ryCItmzQ';
+import 'dotenv/config';
+
+const ACCOUNT_ID = process.env.UNIPILE_ACCOUNT_ID || process.argv[2];
+if (!ACCOUNT_ID) {
+  console.error("❌ Fatal: UNIPILE_ACCOUNT_ID environment variable or CLI argument is required.");
+  process.exit(1);
+}
 const MESSAGE = 'Hi {name}, reaching out via WorkPilot! I am building an AI outreach tool and would love your quick feedback. Hope things are going great!';
 
 async function main() {

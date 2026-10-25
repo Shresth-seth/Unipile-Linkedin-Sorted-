@@ -95,7 +95,7 @@ export const handleUnipileWebhook = async (req: Request, res: Response): Promise
   // 6. Validate mandatory fields before touching database
   if (!norm.isValid) {
     console.warn(`[WEBHOOK] Invalid payload: ${norm.validationError}`);
-    res.status(200).json({
+    res.status(400).json({
       success: false,
       message: norm.validationError,
     });
@@ -135,9 +135,23 @@ export const handleUnipileWebhook = async (req: Request, res: Response): Promise
       });
       return;
     }
+    if (prep.skipped) {
+      res.status(200).json({
+        success: true,
+        messageId: norm.messageId,
+        skipped: true,
+        reason: prep.reason,
+      });
+      return;
+    }
     persistedJobId = prep.jobId;
   } catch (persistErr: any) {
     console.error(`❌ [WEBHOOK] Error during validation/persistence for message '${norm.messageId}':`, persistErr?.message || persistErr);
+    res.status(500).json({
+      success: false,
+      message: "Database persistence failed. Cannot acknowledge receipt.",
+    });
+    return;
   }
 
   // Return HTTP 200 immediately (<100ms) after validation/persistence

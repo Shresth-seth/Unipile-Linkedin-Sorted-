@@ -9,11 +9,9 @@ export class WebhookAuthService {
   public verifyWebhookRequest(req: Request): { valid: boolean; reason?: string } {
     const configuredSecret = process.env.UNIPILE_WEBHOOK_SECRET?.trim();
 
-    // Local development may run without a provider webhook secret. Production fails closed.
+    // Missing webhook secret must fail closed in every environment
     if (!configuredSecret) {
-      return process.env.NODE_ENV === "production"
-        ? { valid: false, reason: "Webhook authentication is not configured." }
-        : { valid: true };
+      return { valid: false, reason: "Webhook authentication is not configured." };
     }
 
     const providedHeader =

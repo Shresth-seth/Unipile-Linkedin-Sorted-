@@ -6,7 +6,11 @@
     "dev": "concurrently --kill-others \"npm run dev:client\" \"npm run dev:server\"",
     "dev:client": "cd client && npm run dev",
     "dev:server": "cd server && npm run dev",
-    "install:all": "cd client && npm install && cd ../server && npm install"
+    "install:all": "cd client && npm install && cd ../server && npm install",
+    "security:scan": "node scripts/scan-secrets.mjs",
+    "test:security-scan": "node scripts/test-secret-scanner.mjs",
+    "test:config-validation": "node scripts/test-config-validation.mjs",
+    "test:all-security": "npm run security:scan && npm run test:security-scan && npm run test:config-validation"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"

@@ -1,10 +1,22 @@
 # ==============================================================================
-# WorkPilot - Automated Remote Deployment to AWS EC2 (13.53.169.49)
+# WorkPilot - Automated Remote Deployment to AWS EC2
 # ==============================================================================
 param(
-    [string]$TargetIP = "13.53.169.49",
-    [string]$KeyFile = "e:\WORKPILOT-main\linkdin  brain.pem"
+    [string]$TargetIP = $env:EC2_TARGET_IP,
+    [string]$KeyFile = $env:EC2_SSH_KEY_PATH,
+    [string]$EnvFile = $env:PRODUCTION_ENV_FILE,
+    [string]$RepoUrl = ($env:GIT_REPO_URL ? $env:GIT_REPO_URL : "https://github.com/YuvrajKhare2025/unipile-linkedin-automation.git")
 )
+
+if (-not $TargetIP) {
+    Write-Host "[ERROR] Target IP is required. Provide -TargetIP or set EC2_TARGET_IP environment variable." -ForegroundColor Red
+    exit 1
+}
+
+if (-not $KeyFile) {
+    Write-Host "[ERROR] SSH KeyFile is required. Provide -KeyFile or set EC2_SSH_KEY_PATH environment variable." -ForegroundColor Red
+    exit 1
+}
 
 Write-Host "==============================================================================" -ForegroundColor Cyan
 Write-Host "[DEPLOY] Deploying WorkPilot to AWS EC2: $TargetIP" -ForegroundColor Cyan
@@ -46,13 +58,17 @@ Write-Host "[OK] Port 22 reachable! Proceeding with full automated setup on EC2.
 
 # Step 1: Clone or update repo on EC2 and run setup-ec2.sh
 Write-Host "[STEP 1] Initializing EC2 instance packages, 4GB swap, and Docker..." -ForegroundColor Cyan
-$remoteInit = "sudo mkdir -p /home/ubuntu/app && sudo chown -R ubuntu:ubuntu /home/ubuntu/app && if [ ! -d /home/ubuntu/app/.git ]; then git clone https://github.com/201Harsh/WORKPILOT.git /home/ubuntu/app; else cd /home/ubuntu/app && git fetch origin main && git reset --hard origin/main; fi && cd /home/ubuntu/app && sudo bash deploy/aws/setup-ec2.sh"
+$remoteInit = "sudo mkdir -p /home/ubuntu/app && sudo chown -R ubuntu:ubuntu /home/ubuntu/app && if [ ! -d /home/ubuntu/app/.git ]; then git clone $RepoUrl /home/ubuntu/app; else cd /home/ubuntu/app && git fetch origin main && git reset --hard origin/main; fi && cd /home/ubuntu/app && sudo bash deploy/aws/setup-ec2.sh"
 
 ssh -i "$KeyFile" -o StrictHostKeyChecking=no ubuntu@$TargetIP $remoteInit
 
-# Step 2: Upload production .env
-Write-Host "[STEP 2] Transferring production environment configuration (.env)..." -ForegroundColor Cyan
-scp -i "$KeyFile" -o StrictHostKeyChecking=no "e:\WORKPILOT-main\.env.production" "ubuntu@${TargetIP}:/home/ubuntu/app/.env"
+# Step 2: Upload production .env (if specified)
+if ($EnvFile -and (Test-Path $EnvFile)) {
+    Write-Host "[STEP 2] Transferring production environment configuration (.env)..." -ForegroundColor Cyan
+    scp -i "$KeyFile" -o StrictHostKeyChecking=no "$EnvFile" "ubuntu@${TargetIP}:/home/ubuntu/app/.env"
+} else {
+    Write-Host "[STEP 2] No local -EnvFile specified. Verifying /home/ubuntu/app/.env on remote instance..." -ForegroundColor Yellow
+}
 
 # Step 3: Run production deployment
 Write-Host "[STEP 3] Launching WorkPilot Docker containers and Nginx reverse proxy..." -ForegroundColor Cyan

@@ -1,0 +1,212 @@
+Category,Feature Name,Identifier / Path,Implementation File,Associated Test Script,Coverage Status,Owner,Notes
+UI Page,Landing / Homepage,/,client/app/page.tsx,None (Manual check only),Unverified,Frontend Lead,"Hero, value proposition, features overview"
+UI Page,About Page,/about,client/app/about/page.tsx,None,Unverified,Frontend Lead,Company and mission overview
+UI Page,Contact Page,/contact,client/app/contact/page.tsx,None,Unverified,Frontend Lead,Public contact form
+UI Page,How It Works,/how-it-works,client/app/how-it-works/page.tsx,None,Unverified,Frontend Lead,Platform walkthrough
+UI Page,Pricing Page,/pricing,client/app/pricing/page.tsx,None,Unverified,Frontend Lead,"Plan tiers, Razorpay integration entrypoint"
+UI Page,Privacy Policy,/privacy,client/app/privacy/page.tsx,None,Unverified,Frontend Lead,Legal privacy terms
+UI Page,Terms of Service,/terms,client/app/terms/page.tsx,None,Unverified,Frontend Lead,Legal terms of service
+UI Page,Product Overview,/product,client/app/product/page.tsx,None,Unverified,Frontend Lead,Product capability deep-dive
+UI Page,Resources Page,/resources,client/app/resources/page.tsx,None,Unverified,Frontend Lead,Guides and knowledge base
+UI Page,Login Screen,/login,client/app/login/page.tsx,"test-auth.ts, test-security.ts",Partial,Auth / Full-Stack,JWT auth form with password validation
+UI Page,Registration Screen,/register,client/app/register/page.tsx,"test-auth.ts, test-validator-rate-limit.ts",Partial,Auth / Full-Stack,Account signup with express-validator and rate limits
+UI Page,Forgot Password,/forgot-password,client/app/forgot-password/page.tsx,None,Unverified,Auth / Full-Stack,Password recovery initiation
+UI Page,Reset Password,/reset-password,client/app/reset-password/page.tsx,None,Unverified,Auth / Full-Stack,Token-based password reset form
+UI Page,Verify Email,/verify-email,client/app/verify-email/page.tsx,None,Unverified,Auth / Full-Stack,Email verification callback handler
+UI Page,LinkedIn Callback Handler,/linkedin/callback,client/app/linkedin/callback/page.tsx,test-linkedin-connect.ts,Partial,Integrations Lead,Receives Unipile hosted auth redirect
+UI Dashboard,Main Dashboard Overview,/dashboard,client/app/dashboard/page.tsx,FRONTEND_INTEGRATION_TESTING.md (Manual),Unverified,Frontend / Product,"Aggregated funnel, account health, and quick actions"
+UI View,Agent Automation View,View: agent,client/components/dashboard/views/agent-view.tsx,"test-daily-agent.ts, test-agent-memory.ts",Partial,AI Agent Engineer,"Killswitch toggle, personality prompt, daily run status"
+UI View,Campaigns Builder View,View: campaigns,client/components/dashboard/views/campaigns-view.tsx,test-phase2.ts,Partial,Growth / Full-Stack,"Target search, personalized notes, cadence setup"
+UI View,Integrations / Accounts View,View: integrations,client/components/dashboard/views/integrations-view.tsx,test-linkedin-connect.ts,Partial,Integrations Lead,"Unipile account card, connection status, re-auth"
+UI View,Inbox & Messaging View,View: messages,client/components/dashboard/views/messages-view.tsx,"test-message-listening.ts, test-reply-quality.ts",Partial,Full-Stack Engineer,"Live conversation threads, human takeover toggle"
+UI View,Prospects & Pipeline View,View: prospects,client/components/dashboard/views/prospects-view.tsx,test-phase2.ts,Partial,CRM Engineer,"10-stage contact pipeline, stage transition"
+UI View,User Settings View,View: settings,client/components/dashboard/views/settings-view.tsx,test-gemini-byok.ts,Partial,Full-Stack Engineer,"Gemini BYOK key input, timezone, account delete"
+UI View,Activity Log View,View: activity,client/components/dashboard/views/activity-view.tsx,None,Unverified,Full-Stack Engineer,Recent dispatched invitations and message audits
+UI View,Agent Training View,View: training,client/components/dashboard/views/training-view.tsx,test-multistep-subgraphs.ts,Partial,AI Agent Engineer,Subgraphs rule customization and example replies
+UI View,Automation Controls View,View: automation,client/components/dashboard/views/automation-view.tsx,test-phase5.ts,Partial,Platform Lead,"Safety caps (25/day), jitter schedule, pre-flight checks"
+UI Admin,Admin Overview,/admin,client/app/admin/page.tsx,None,Unverified,Platform Lead,System-wide metrics and tenant counts
+UI Admin,Admin Accounts Management,/admin/accounts,client/app/admin/accounts/page.tsx,None,Unverified,Platform Lead,Cross-tenant Unipile account health inspector
+UI Admin,Admin Queue Inspector,/admin/queue,client/app/admin/queue/page.tsx,None,Unverified,Platform Lead,Global action queue backlog view
+UI Admin,Admin System Settings,/admin/settings,client/app/admin/settings/page.tsx,None,Unverified,Platform Lead,"Master Unipile DSN/key, default Gemini model"
+UI Admin,Admin User Roster,/admin/users,client/app/admin/users/page.tsx,None,Unverified,Platform Lead,"User roster, role modification, account purge"
+UI Component,Login Form Component,Component: LoginForm,client/components/auth/login-form.tsx,test-auth.ts,Partial,Frontend Lead,Client login state management
+UI Component,Register Form Component,Component: RegisterForm,client/components/auth/register-form.tsx,test-auth.ts,Partial,Frontend Lead,Client registration state management
+UI Component,Contact Form Component,Component: ContactForm,client/components/contact/contact-form.tsx,None,Unverified,Frontend Lead,Client public message form
+UI Component,Discovery Transform,Component: DiscoveryTransform,client/components/product/discovery-transform.tsx,None,Unverified,Frontend Lead,Interactive product demo
+UI Component,Product Hero Preview,Component: ProductHeroPreview,client/components/product/product-hero-preview.tsx,None,Unverified,Frontend Lead,Product mockup showcase
+Database Table,Users,users,server/src/db/schema.ts:15,"test-auth.ts, test-security.ts",Verified,Backend / Auth,"Stores tenant identity, bcrypt hash, role (USER/ADMIN), BYOK key"
+Database Table,LinkedIn Accounts,linkedin_accounts,server/src/db/schema.ts:33,"test-linkedin-connect.ts, test-security.ts",Verified,Integrations,"Unipile account mapping, healthStatus, encrypted credentials"
+Database Table,Contacts / Prospects,contacts,server/src/db/schema.ts:51,"test-phase2.ts, test-security.ts",Verified,CRM Engineer,"Pipeline lead state, stage (10 stages), tags, takeover flag"
+Database Table,Daily Agent Settings,daily_agent_settings,server/src/db/schema.ts:74,test-daily-agent.ts,Verified,AI Lead,"Agent personality, replyMode (AUTO/MANUAL), daily quota"
+Database Table,Daily Agent Runs,daily_agent_runs,server/src/db/schema.ts:89,test-daily-agent.ts,Verified,AI Lead,Tracks atomic daily run keys (e.g. 2026-10-24) to prevent re-execution
+Database Table,Webhook Events,webhook_events,server/src/db/schema.ts:104,test-unipile-webhook.ts,Verified,Integrations,Deduplication table storing event_id and hash to prevent double processing
+Database Table,Message Agent Jobs,message_agent_jobs,server/src/db/schema.ts:121,test-unipile-webhook.ts,Verified,Integrations,Durable inbound message queue for agent processing
+Database Table,Messages,messages,server/src/db/schema.ts:145,"test-phase3.ts, test-security.ts",Verified,Messaging Lead,"Direct message history, direction (IN/OUT), sentiment, read status"
+Database Table,Action Queue,action_queue,server/src/db/schema.ts:168,"test-phase2.ts, test-phase4.ts",Verified,Queue / Worker,Outbound scheduled tasks with randomized jitter executeAt
+Database Table,System Settings,system_settings,server/src/db/schema.ts:192,"test-gemini-byok.ts, check_unipile.mjs",Verified,Platform Lead,"Global config: unipile_dsn, unipile_api_key, gemini_api_key (encrypted)"
+Database Table,Billing Events,billing_events,server/src/db/schema.ts:208,test-saas-foundation.ts,Partial,Billing Lead,Razorpay subscription events and payment confirmations
+Database Table,Auth Tokens,auth_tokens,server/src/db/schema.ts:223,test-auth.ts,Verified,Auth / Security,Revoked tokens and refresh sessions
+Database Table,Agent Messages Memory,agent_messages,server/src/db/schema.ts:238,test-agent-memory.ts,Verified,AI Lead,Short-term agent memory backup and turn history
+Background Job,Action Queue Worker,actionQueueService.processDueActions,server/src/services/queue/queue.service.ts,test-phase2.ts,Partial,Worker Engineer,Runs every 30s in server/src/index.ts. Checks pre-flight and dispatches queue.
+Background Job,Message Agent Worker,messageAgentWorker.processPendingJobs,server/src/services/webhook/message-agent.worker.ts,test-unipile-webhook.ts,Partial,AI / Webhook,Runs every 30s. Picks pending inbound messages and invokes AI auto-reply.
+Background Job,Inbound LinkedIn Sync Poller,inboundSyncService.startPolling,server/src/services/linkedin/inbound-sync.service.ts,test-message-listening.ts,Partial,Integrations,Runs every 30s. Polls Unipile relations and messages if webhooks are delayed.
+Background Job,Daily Outreach Agent Cron,runDailyAgentJob,server/src/jobs/run-daily-agent.ts,test-daily-agent.ts,Partial,AI Lead,"Autonomous daily campaign runner: searches prospects, creates connections."
+Integration,Unipile LinkedIn API,https://api*.unipile.com,server/src/services/unipile/unipile.client.ts,test-linkedin-connect.ts (live),Blocked / Mock Missing,Integrations Lead,Core proxy gateway for LinkedIn. Real API calls made without offline stub.
+Integration,Google Gemini AI,models/gemini-2.5-flash,server/src/services/ai/gemini-config.service.ts,"test-gemini-byok.ts, test-agent.ts",Partial,AI Lead,Generates replies and personalizations. BYOK key supported.
+Integration,Razorpay Subscriptions,api.razorpay.com/v1,server/src/services/billing/razorpay.service.ts,test-saas-foundation.ts,Partial,Billing Lead,"Monthly/yearly plans, webhook signature verification."
+Integration,Resend Transactional Email,api.resend.com,server/src/services/email/email.service.ts,None,Unverified,DevOps / Infra,"Sends invitation, verification, and reset password emails."
+API Route (app.ts),GET /api/health,/api/health,server/src/app.ts:98,test-phase5.ts,Partial,Infra / DevOps,"Returns service status, deployed version, and timestamp"
+API Route (app.ts),GET /api/health/liveness,/api/health/liveness,server/src/app.ts:98,"test-phase5.ts, deploy CI curl",Verified,Infra / DevOps,AWS container liveness probe (HTTP 200)
+API Route (app.ts),GET /api/health/readiness,/api/health/readiness,server/src/app.ts:126,test-phase5.ts,Partial,Infra / DevOps,Database readiness ping (SELECT 1)
+API Route (admin),GET /overview,/api/admin/overview,server/src/routes/admin.routes.ts:29,test-security.ts (partial),Partial,Admin Lead,Route handler in admin.routes.ts
+API Route (admin),GET /linkedin-accounts,/api/admin/linkedin-accounts,server/src/routes/admin.routes.ts:32,test-security.ts (partial),Partial,Admin Lead,Route handler in admin.routes.ts
+API Route (admin),POST /linkedin-accounts/:id/disconnect,/api/admin/linkedin-accounts/:id/disconnect,server/src/routes/admin.routes.ts:33,test-security.ts (partial),Partial,Admin Lead,Route handler in admin.routes.ts
+API Route (admin),POST /linkedin-accounts/:id/check-health,/api/admin/linkedin-accounts/:id/check-health,server/src/routes/admin.routes.ts:34,test-security.ts (partial),Partial,Admin Lead,Route handler in admin.routes.ts
+API Route (admin),GET /users,/api/admin/users,server/src/routes/admin.routes.ts:37,test-security.ts (partial),Partial,Admin Lead,Route handler in admin.routes.ts
+API Route (admin),GET /settings/unipile,/api/admin/settings/unipile,server/src/routes/admin.routes.ts:40,test-security.ts (partial),Partial,Admin Lead,Route handler in admin.routes.ts
+API Route (admin),POST /settings/unipile,/api/admin/settings/unipile,server/src/routes/admin.routes.ts:41,test-security.ts (partial),Partial,Admin Lead,Route handler in admin.routes.ts
+API Route (admin),POST /settings/unipile/test,/api/admin/settings/unipile/test,server/src/routes/admin.routes.ts:42,test-security.ts (partial),Partial,Admin Lead,Route handler in admin.routes.ts
+API Route (admin),GET /settings/gemini,/api/admin/settings/gemini,server/src/routes/admin.routes.ts:45,test-security.ts (partial),Partial,Admin Lead,Route handler in admin.routes.ts
+API Route (admin),POST /settings/gemini,/api/admin/settings/gemini,server/src/routes/admin.routes.ts:46,test-security.ts (partial),Partial,Admin Lead,Route handler in admin.routes.ts
+API Route (admin),POST /settings/gemini/test,/api/admin/settings/gemini/test,server/src/routes/admin.routes.ts:47,test-security.ts (partial),Partial,Admin Lead,Route handler in admin.routes.ts
+API Route (admin),GET /queue/stats,/api/admin/queue/stats,server/src/routes/admin.routes.ts:50,test-security.ts (partial),Partial,Admin Lead,Route handler in admin.routes.ts
+API Route (admin),GET /automation/health,/api/admin/automation/health,server/src/routes/admin.routes.ts:53,test-security.ts (partial),Partial,Admin Lead,Route handler in admin.routes.ts
+API Route (admin),POST /daily-agent/run/:userId,/api/admin/daily-agent/run/:userId,server/src/routes/admin.routes.ts:56,test-security.ts (partial),Partial,Admin Lead,Route handler in admin.routes.ts
+API Route (admin),POST /message-agent/simulate-webhook,/api/admin/message-agent/simulate-webhook,server/src/routes/admin.routes.ts:59,test-security.ts (partial),Partial,Admin Lead,Route handler in admin.routes.ts
+API Route (admin),POST /message-agent/process-job/:jobId,/api/admin/message-agent/process-job/:jobId,server/src/routes/admin.routes.ts:60,test-security.ts (partial),Partial,Admin Lead,Route handler in admin.routes.ts
+API Route (agent),GET /stream,/api/agent/stream,server/src/routes/agent.routes.ts:27,test-agent.ts (partial),Partial,AI Lead,Route handler in agent.routes.ts
+API Route (agent),GET /tasks,/api/agent/tasks,server/src/routes/agent.routes.ts:30,test-agent.ts (partial),Partial,AI Lead,Route handler in agent.routes.ts
+API Route (agent),POST /tasks/:taskId/stop,/api/agent/tasks/:taskId/stop,server/src/routes/agent.routes.ts:31,test-agent.ts (partial),Partial,AI Lead,Route handler in agent.routes.ts
+API Route (agent),GET /daily/runs,/api/agent/daily/runs,server/src/routes/agent.routes.ts:34,test-agent.ts (partial),Partial,AI Lead,Route handler in agent.routes.ts
+API Route (agent),POST /daily/run-now,/api/agent/daily/run-now,server/src/routes/agent.routes.ts:35,test-agent.ts (partial),Partial,AI Lead,Route handler in agent.routes.ts
+API Route (agent),GET /drafts,/api/agent/drafts,server/src/routes/agent.routes.ts:38,test-agent.ts (partial),Partial,AI Lead,Route handler in agent.routes.ts
+API Route (agent),POST /drafts/:contactId/approve,/api/agent/drafts/:contactId/approve,server/src/routes/agent.routes.ts:39,test-agent.ts (partial),Partial,AI Lead,Route handler in agent.routes.ts
+API Route (agent),DELETE /drafts/:contactId,/api/agent/drafts/:contactId,server/src/routes/agent.routes.ts:40,test-agent.ts (partial),Partial,AI Lead,Route handler in agent.routes.ts
+API Route (agent),POST /chat,/api/agent/chat,server/src/routes/agent.routes.ts:43,test-agent.ts (partial),Partial,AI Lead,Route handler in agent.routes.ts
+API Route (agent),POST /stop,/api/agent/stop,server/src/routes/agent.routes.ts:46,test-agent.ts (partial),Partial,AI Lead,Route handler in agent.routes.ts
+API Route (agent),GET /messages,/api/agent/messages,server/src/routes/agent.routes.ts:49,test-agent.ts (partial),Partial,AI Lead,Route handler in agent.routes.ts
+API Route (agent),DELETE /messages,/api/agent/messages,server/src/routes/agent.routes.ts:52,test-agent.ts (partial),Partial,AI Lead,Route handler in agent.routes.ts
+API Route (agent),GET /settings,/api/agent/settings,server/src/routes/agent.routes.ts:55,test-agent.ts (partial),Partial,AI Lead,Route handler in agent.routes.ts
+API Route (agent),POST /settings,/api/agent/settings,server/src/routes/agent.routes.ts:56,test-agent.ts (partial),Partial,AI Lead,Route handler in agent.routes.ts
+API Route (agent),POST /campaign,/api/agent/campaign,server/src/routes/agent.routes.ts:59,test-agent.ts (partial),Partial,AI Lead,Route handler in agent.routes.ts
+API Route (agent),GET /tools,/api/agent/tools,server/src/routes/agent.routes.ts:62,test-agent.ts (partial),Partial,AI Lead,Route handler in agent.routes.ts
+API Route (agent),POST /outreach-connections,/api/agent/outreach-connections,server/src/routes/agent.routes.ts:65,test-agent.ts (partial),Partial,AI Lead,Route handler in agent.routes.ts
+API Route (auth),POST /signup,/api/auth/signup,server/src/routes/auth.routes.ts:64,"test-auth.ts, test-security.ts, test-validator-rate-limit.ts",Partial,Auth Lead,Route handler in auth.routes.ts
+API Route (auth),POST /login,/api/auth/login,server/src/routes/auth.routes.ts:65,"test-auth.ts, test-security.ts, test-validator-rate-limit.ts",Partial,Auth Lead,Route handler in auth.routes.ts
+API Route (auth),POST /verify-email,/api/auth/verify-email,server/src/routes/auth.routes.ts:66,"test-auth.ts, test-security.ts, test-validator-rate-limit.ts",Partial,Auth Lead,Route handler in auth.routes.ts
+API Route (auth),POST /resend-verification,/api/auth/resend-verification,server/src/routes/auth.routes.ts:67,"test-auth.ts, test-security.ts, test-validator-rate-limit.ts",Partial,Auth Lead,Route handler in auth.routes.ts
+API Route (auth),POST /forgot-password,/api/auth/forgot-password,server/src/routes/auth.routes.ts:68,"test-auth.ts, test-security.ts, test-validator-rate-limit.ts",Partial,Auth Lead,Route handler in auth.routes.ts
+API Route (auth),POST /reset-password,/api/auth/reset-password,server/src/routes/auth.routes.ts:69,"test-auth.ts, test-security.ts, test-validator-rate-limit.ts",Partial,Auth Lead,Route handler in auth.routes.ts
+API Route (auth),GET /me,/api/auth/me,server/src/routes/auth.routes.ts:77,"test-auth.ts, test-security.ts, test-validator-rate-limit.ts",Partial,Auth Lead,Route handler in auth.routes.ts
+API Route (auth),POST /logout,/api/auth/logout,server/src/routes/auth.routes.ts:78,"test-auth.ts, test-security.ts, test-validator-rate-limit.ts",Partial,Auth Lead,Route handler in auth.routes.ts
+API Route (auth),DELETE /account,/api/auth/account,server/src/routes/auth.routes.ts:79,"test-auth.ts, test-security.ts, test-validator-rate-limit.ts",Partial,Auth Lead,Route handler in auth.routes.ts
+API Route (billing),POST /webhook,/api/billing/webhook,server/src/routes/billing.routes.ts:6,test-saas-foundation.ts,Partial,Billing Lead,Route handler in billing.routes.ts
+API Route (billing),GET /subscription,/api/billing/subscription,server/src/routes/billing.routes.ts:7,test-saas-foundation.ts,Partial,Billing Lead,Route handler in billing.routes.ts
+API Route (billing),POST /checkout,/api/billing/checkout,server/src/routes/billing.routes.ts:8,test-saas-foundation.ts,Partial,Billing Lead,Route handler in billing.routes.ts
+API Route (billing),POST /cancel,/api/billing/cancel,server/src/routes/billing.routes.ts:9,test-saas-foundation.ts,Partial,Billing Lead,Route handler in billing.routes.ts
+API Route (contact),POST /,/api/contact,server/src/routes/contact.routes.ts:6,None,Unverified,Full-Stack Lead,Route handler in contact.routes.ts
+API Route (conversation),GET /conversations/:contactId/messages,/api/conversations/:contactId/messages,server/src/routes/conversation.routes.ts:21,test-security.ts (partial),Partial,Messaging Lead,Route handler in conversation.routes.ts
+API Route (conversation),POST /conversations/:contactId/takeover,/api/conversations/:contactId/takeover,server/src/routes/conversation.routes.ts:26,test-security.ts (partial),Partial,Messaging Lead,Route handler in conversation.routes.ts
+API Route (conversation),POST /conversations/:contactId/pilot-mode,/api/conversations/:contactId/pilot-mode,server/src/routes/conversation.routes.ts:31,test-security.ts (partial),Partial,Messaging Lead,Route handler in conversation.routes.ts
+API Route (conversation),POST /conversations/generate-reply,/api/conversations/generate-reply,server/src/routes/conversation.routes.ts:36,test-security.ts (partial),Partial,Messaging Lead,Route handler in conversation.routes.ts
+API Route (conversation),POST /conversations/copilot-chat,/api/conversations/copilot-chat,server/src/routes/conversation.routes.ts:41,test-security.ts (partial),Partial,Messaging Lead,Route handler in conversation.routes.ts
+API Route (conversation),POST /conversations/outreach-brain/check,/api/conversations/outreach-brain/check,server/src/routes/conversation.routes.ts:46,test-security.ts (partial),Partial,Messaging Lead,Route handler in conversation.routes.ts
+API Route (conversation),POST /conversations/outreach-brain/differentiate,/api/conversations/outreach-brain/differentiate,server/src/routes/conversation.routes.ts:51,test-security.ts (partial),Partial,Messaging Lead,Route handler in conversation.routes.ts
+API Route (conversation),GET /conversations/chatbot/status,/api/conversations/chatbot/status,server/src/routes/conversation.routes.ts:56,test-security.ts (partial),Partial,Messaging Lead,Route handler in conversation.routes.ts
+API Route (conversation),POST /conversations/chatbot/toggle,/api/conversations/chatbot/toggle,server/src/routes/conversation.routes.ts:61,test-security.ts (partial),Partial,Messaging Lead,Route handler in conversation.routes.ts
+API Route (conversation),POST /conversations/:contactId/reply,/api/conversations/:contactId/reply,server/src/routes/conversation.routes.ts:66,test-security.ts (partial),Partial,Messaging Lead,Route handler in conversation.routes.ts
+API Route (dashboard),GET /dashboard/overview,/api/dashboard/overview,server/src/routes/dashboard.routes.ts:8,"test-phase5.ts, test-security.ts",Partial,Dashboard Lead,Route handler in dashboard.routes.ts
+API Route (dashboard),GET /dashboard/funnel,/api/dashboard/funnel,server/src/routes/dashboard.routes.ts:9,"test-phase5.ts, test-security.ts",Partial,Dashboard Lead,Route handler in dashboard.routes.ts
+API Route (dashboard),GET /dashboard/contacts,/api/dashboard/contacts,server/src/routes/dashboard.routes.ts:10,"test-phase5.ts, test-security.ts",Partial,Dashboard Lead,Route handler in dashboard.routes.ts
+API Route (dashboard),PATCH /dashboard/contacts/:id/stage,/api/dashboard/contacts/:id/stage,server/src/routes/dashboard.routes.ts:11,"test-phase5.ts, test-security.ts",Partial,Dashboard Lead,Route handler in dashboard.routes.ts
+API Route (dashboard),GET /dashboard/account-health,/api/dashboard/account-health,server/src/routes/dashboard.routes.ts:14,"test-phase5.ts, test-security.ts",Partial,Dashboard Lead,Route handler in dashboard.routes.ts
+API Route (dashboard),POST /dashboard/emergency-pause,/api/dashboard/emergency-pause,server/src/routes/dashboard.routes.ts:15,"test-phase5.ts, test-security.ts",Partial,Dashboard Lead,Route handler in dashboard.routes.ts
+API Route (dashboard),POST /dashboard/resume,/api/dashboard/resume,server/src/routes/dashboard.routes.ts:16,"test-phase5.ts, test-security.ts",Partial,Dashboard Lead,Route handler in dashboard.routes.ts
+API Route (dashboard),GET /health/liveness,/api/health/liveness,server/src/routes/dashboard.routes.ts:19,"test-phase5.ts, test-security.ts",Partial,Dashboard Lead,Route handler in dashboard.routes.ts
+API Route (dashboard),GET /health/readiness,/api/health/readiness,server/src/routes/dashboard.routes.ts:20,"test-phase5.ts, test-security.ts",Partial,Dashboard Lead,Route handler in dashboard.routes.ts
+API Route (engagement),POST /engagement/warmup,/api/engagement/warmup,server/src/routes/engagement.routes.ts:11,test-phase4.ts,Partial,Engagement Lead,Route handler in engagement.routes.ts
+API Route (engagement),GET /engagement/posts/:targetId,/api/engagement/posts/:targetId,server/src/routes/engagement.routes.ts:12,test-phase4.ts,Partial,Engagement Lead,Route handler in engagement.routes.ts
+API Route (engagement),POST /engagement/validate-comment,/api/engagement/validate-comment,server/src/routes/engagement.routes.ts:13,test-phase4.ts,Partial,Engagement Lead,Route handler in engagement.routes.ts
+API Route (linkedin),GET /connect,/api/linkedin/connect,server/src/routes/linkedin.routes.ts:45,"test-phase1.ts, test-linkedin-connect.ts",Partial,Integrations Lead,Route handler in linkedin.routes.ts
+API Route (linkedin),GET /status,/api/linkedin/status,server/src/routes/linkedin.routes.ts:46,"test-phase1.ts, test-linkedin-connect.ts",Partial,Integrations Lead,Route handler in linkedin.routes.ts
+API Route (linkedin),GET /account,/api/linkedin/account,server/src/routes/linkedin.routes.ts:47,"test-phase1.ts, test-linkedin-connect.ts",Partial,Integrations Lead,Route handler in linkedin.routes.ts
+API Route (linkedin),GET /me,/api/linkedin/me,server/src/routes/linkedin.routes.ts:48,"test-phase1.ts, test-linkedin-connect.ts",Partial,Integrations Lead,Route handler in linkedin.routes.ts
+API Route (linkedin),GET /profile/me,/api/linkedin/profile/me,server/src/routes/linkedin.routes.ts:49,"test-phase1.ts, test-linkedin-connect.ts",Partial,Integrations Lead,Route handler in linkedin.routes.ts
+API Route (linkedin),POST /disconnect,/api/linkedin/disconnect,server/src/routes/linkedin.routes.ts:50,"test-phase1.ts, test-linkedin-connect.ts",Partial,Integrations Lead,Route handler in linkedin.routes.ts
+API Route (linkedin),POST /purge-cookies,/api/linkedin/purge-cookies,server/src/routes/linkedin.routes.ts:51,"test-phase1.ts, test-linkedin-connect.ts",Partial,Integrations Lead,Route handler in linkedin.routes.ts
+API Route (linkedin),DELETE /cookies,/api/linkedin/cookies,server/src/routes/linkedin.routes.ts:52,"test-phase1.ts, test-linkedin-connect.ts",Partial,Integrations Lead,Route handler in linkedin.routes.ts
+API Route (linkedin),DELETE /login,/api/linkedin/login,server/src/routes/linkedin.routes.ts:53,"test-phase1.ts, test-linkedin-connect.ts",Partial,Integrations Lead,Route handler in linkedin.routes.ts
+API Route (linkedin),POST /delete-login,/api/linkedin/delete-login,server/src/routes/linkedin.routes.ts:54,"test-phase1.ts, test-linkedin-connect.ts",Partial,Integrations Lead,Route handler in linkedin.routes.ts
+API Route (linkedin),POST /sync,/api/linkedin/sync,server/src/routes/linkedin.routes.ts:55,"test-phase1.ts, test-linkedin-connect.ts",Partial,Integrations Lead,Route handler in linkedin.routes.ts
+API Route (linkedin),POST /callback,/api/linkedin/callback,server/src/routes/linkedin.routes.ts:56,"test-phase1.ts, test-linkedin-connect.ts",Partial,Integrations Lead,Route handler in linkedin.routes.ts
+API Route (linkedin),POST /connect/credentials,/api/linkedin/connect/credentials,server/src/routes/linkedin.routes.ts:59,"test-phase1.ts, test-linkedin-connect.ts",Partial,Integrations Lead,Route handler in linkedin.routes.ts
+API Route (linkedin),POST /connect/cookie,/api/linkedin/connect/cookie,server/src/routes/linkedin.routes.ts:60,"test-phase1.ts, test-linkedin-connect.ts",Partial,Integrations Lead,Route handler in linkedin.routes.ts
+API Route (linkedin),POST /checkpoint/solve,/api/linkedin/checkpoint/solve,server/src/routes/linkedin.routes.ts:61,"test-phase1.ts, test-linkedin-connect.ts",Partial,Integrations Lead,Route handler in linkedin.routes.ts
+API Route (linkedin),POST /checkpoint/resend,/api/linkedin/checkpoint/resend,server/src/routes/linkedin.routes.ts:62,"test-phase1.ts, test-linkedin-connect.ts",Partial,Integrations Lead,Route handler in linkedin.routes.ts
+API Route (linkedin),GET /checkpoint/status/:accountId,/api/linkedin/checkpoint/status/:accountId,server/src/routes/linkedin.routes.ts:63,"test-phase1.ts, test-linkedin-connect.ts",Partial,Integrations Lead,Route handler in linkedin.routes.ts
+API Route (linkedin),GET /profile/:identifier,/api/linkedin/profile/:identifier,server/src/routes/linkedin.routes.ts:70,"test-phase1.ts, test-linkedin-connect.ts",Partial,Integrations Lead,Route handler in linkedin.routes.ts
+API Route (linkedin),GET /profile,/api/linkedin/profile,server/src/routes/linkedin.routes.ts:71,"test-phase1.ts, test-linkedin-connect.ts",Partial,Integrations Lead,Route handler in linkedin.routes.ts
+API Route (linkedin),GET /search,/api/linkedin/search,server/src/routes/linkedin.routes.ts:72,"test-phase1.ts, test-linkedin-connect.ts",Partial,Integrations Lead,Route handler in linkedin.routes.ts
+API Route (linkedin),POST /search,/api/linkedin/search,server/src/routes/linkedin.routes.ts:73,"test-phase1.ts, test-linkedin-connect.ts",Partial,Integrations Lead,Route handler in linkedin.routes.ts
+API Route (linkedin),POST /connection,/api/linkedin/connection,server/src/routes/linkedin.routes.ts:76,"test-phase1.ts, test-linkedin-connect.ts",Partial,Integrations Lead,Route handler in linkedin.routes.ts
+API Route (linkedin),POST /invite,/api/linkedin/invite,server/src/routes/linkedin.routes.ts:77,"test-phase1.ts, test-linkedin-connect.ts",Partial,Integrations Lead,Route handler in linkedin.routes.ts
+API Route (linkedin),GET /invitations/sent,/api/linkedin/invitations/sent,server/src/routes/linkedin.routes.ts:78,"test-phase1.ts, test-linkedin-connect.ts",Partial,Integrations Lead,Route handler in linkedin.routes.ts
+API Route (linkedin),DELETE /invitations/sent/:invitationId,/api/linkedin/invitations/sent/:invitationId,server/src/routes/linkedin.routes.ts:79,"test-phase1.ts, test-linkedin-connect.ts",Partial,Integrations Lead,Route handler in linkedin.routes.ts
+API Route (linkedin),GET /invitations/received,/api/linkedin/invitations/received,server/src/routes/linkedin.routes.ts:84,"test-phase1.ts, test-linkedin-connect.ts",Partial,Integrations Lead,Route handler in linkedin.routes.ts
+API Route (linkedin),POST /invitations/:invitationId/accept,/api/linkedin/invitations/:invitationId/accept,server/src/routes/linkedin.routes.ts:85,"test-phase1.ts, test-linkedin-connect.ts",Partial,Integrations Lead,Route handler in linkedin.routes.ts
+API Route (linkedin),POST /invitations/:invitationId/decline,/api/linkedin/invitations/:invitationId/decline,server/src/routes/linkedin.routes.ts:90,"test-phase1.ts, test-linkedin-connect.ts",Partial,Integrations Lead,Route handler in linkedin.routes.ts
+API Route (linkedin),GET /conversations,/api/linkedin/conversations,server/src/routes/linkedin.routes.ts:97,"test-phase1.ts, test-linkedin-connect.ts",Partial,Integrations Lead,Route handler in linkedin.routes.ts
+API Route (linkedin),POST /conversations/sync,/api/linkedin/conversations/sync,server/src/routes/linkedin.routes.ts:98,"test-phase1.ts, test-linkedin-connect.ts",Partial,Integrations Lead,Route handler in linkedin.routes.ts
+API Route (linkedin),GET /conversations/:conversationId/messages,/api/linkedin/conversations/:conversationId/messages,server/src/routes/linkedin.routes.ts:99,"test-phase1.ts, test-linkedin-connect.ts",Partial,Integrations Lead,Route handler in linkedin.routes.ts
+API Route (linkedin),POST /message,/api/linkedin/message,server/src/routes/linkedin.routes.ts:104,"test-phase1.ts, test-linkedin-connect.ts",Partial,Integrations Lead,Route handler in linkedin.routes.ts
+API Route (linkedin),POST /messages/rich,/api/linkedin/messages/rich,server/src/routes/linkedin.routes.ts:105,"test-phase1.ts, test-linkedin-connect.ts",Partial,Integrations Lead,Route handler in linkedin.routes.ts
+API Route (linkedin),PATCH /conversations/:conversationId/read,/api/linkedin/conversations/:conversationId/read,server/src/routes/linkedin.routes.ts:106,"test-phase1.ts, test-linkedin-connect.ts",Partial,Integrations Lead,Route handler in linkedin.routes.ts
+API Route (linkedin),GET /posts,/api/linkedin/posts,server/src/routes/linkedin.routes.ts:113,"test-phase1.ts, test-linkedin-connect.ts",Partial,Integrations Lead,Route handler in linkedin.routes.ts
+API Route (linkedin),POST /posts,/api/linkedin/posts,server/src/routes/linkedin.routes.ts:114,"test-phase1.ts, test-linkedin-connect.ts",Partial,Integrations Lead,Route handler in linkedin.routes.ts
+API Route (linkedin),DELETE /posts/:postId,/api/linkedin/posts/:postId,server/src/routes/linkedin.routes.ts:115,"test-phase1.ts, test-linkedin-connect.ts",Partial,Integrations Lead,Route handler in linkedin.routes.ts
+API Route (linkedin),POST /react,/api/linkedin/react,server/src/routes/linkedin.routes.ts:116,"test-phase1.ts, test-linkedin-connect.ts",Partial,Integrations Lead,Route handler in linkedin.routes.ts
+API Route (linkedin),POST /comment,/api/linkedin/comment,server/src/routes/linkedin.routes.ts:117,"test-phase1.ts, test-linkedin-connect.ts",Partial,Integrations Lead,Route handler in linkedin.routes.ts
+API Route (linkedin),GET /companies/search,/api/linkedin/companies/search,server/src/routes/linkedin.routes.ts:120,"test-phase1.ts, test-linkedin-connect.ts",Partial,Integrations Lead,Route handler in linkedin.routes.ts
+API Route (linkedin),GET /companies/:identifier,/api/linkedin/companies/:identifier,server/src/routes/linkedin.routes.ts:121,"test-phase1.ts, test-linkedin-connect.ts",Partial,Integrations Lead,Route handler in linkedin.routes.ts
+API Route (linkedin),GET /jobs/search,/api/linkedin/jobs/search,server/src/routes/linkedin.routes.ts:124,"test-phase1.ts, test-linkedin-connect.ts",Partial,Integrations Lead,Route handler in linkedin.routes.ts
+API Route (linkedin),GET /jobs/:jobId,/api/linkedin/jobs/:jobId,server/src/routes/linkedin.routes.ts:125,"test-phase1.ts, test-linkedin-connect.ts",Partial,Integrations Lead,Route handler in linkedin.routes.ts
+API Route (linkedin),POST /webhook,/api/linkedin/webhook,server/src/routes/linkedin.routes.ts:128,"test-phase1.ts, test-linkedin-connect.ts",Partial,Integrations Lead,Route handler in linkedin.routes.ts
+API Route (queue),GET /stats,/api/stats,server/src/routes/queue.routes.ts:17,"test-phase2.ts, test-security.ts",Partial,Queue Lead,Route handler in queue.routes.ts
+API Route (queue),POST /process,/api/process,server/src/routes/queue.routes.ts:18,"test-phase2.ts, test-security.ts",Partial,Queue Lead,Route handler in queue.routes.ts
+API Route (queue),POST /pause,/api/pause,server/src/routes/queue.routes.ts:19,"test-phase2.ts, test-security.ts",Partial,Queue Lead,Route handler in queue.routes.ts
+API Route (queue),POST /resume,/api/resume,server/src/routes/queue.routes.ts:20,"test-phase2.ts, test-security.ts",Partial,Queue Lead,Route handler in queue.routes.ts
+API Route (queue),POST /prospects/discover,/api/prospects/discover,server/src/routes/queue.routes.ts:23,"test-phase2.ts, test-security.ts",Partial,Queue Lead,Route handler in queue.routes.ts
+API Route (queue),POST /prospects/connect,/api/prospects/connect,server/src/routes/queue.routes.ts:24,"test-phase2.ts, test-security.ts",Partial,Queue Lead,Route handler in queue.routes.ts
+API Route (queue),POST /prospects/accepted,/api/prospects/accepted,server/src/routes/queue.routes.ts:25,"test-phase2.ts, test-security.ts",Partial,Queue Lead,Route handler in queue.routes.ts
+API Route (settings),GET /gemini,/api/settings/gemini,server/src/routes/settings.routes.ts:8,test-gemini-byok.ts,Partial,Full-Stack Lead,Route handler in settings.routes.ts
+API Route (settings),POST /gemini,/api/settings/gemini,server/src/routes/settings.routes.ts:11,test-gemini-byok.ts,Partial,Full-Stack Lead,Route handler in settings.routes.ts
+API Route (settings),POST /gemini/test,/api/settings/gemini/test,server/src/routes/settings.routes.ts:14,test-gemini-byok.ts,Partial,Full-Stack Lead,Route handler in settings.routes.ts
+API Route (settings),DELETE /gemini,/api/settings/gemini,server/src/routes/settings.routes.ts:17,test-gemini-byok.ts,Partial,Full-Stack Lead,Route handler in settings.routes.ts
+API Route (webhook),POST /,/api/webhooks,server/src/routes/webhook.routes.ts:7,test-unipile-webhook.ts,Partial,Integrations Lead,Route handler in webhook.routes.ts
+API Route (webhook),POST /unipile,/api/webhooks/unipile,server/src/routes/webhook.routes.ts:8,test-unipile-webhook.ts,Partial,Integrations Lead,Route handler in webhook.routes.ts
+API Route (webhook),POST /messages,/api/webhooks/messages,server/src/routes/webhook.routes.ts:9,test-unipile-webhook.ts,Partial,Integrations Lead,Route handler in webhook.routes.ts
+API Route (webhook),POST /unipile/messages,/api/webhooks/unipile/messages,server/src/routes/webhook.routes.ts:10,test-unipile-webhook.ts,Partial,Integrations Lead,Route handler in webhook.routes.ts
+API Alias (/internal/admin),GET /internal/admin/overview,/internal/admin/overview,server/src/app.ts:142 (admin.routes.ts:29),None,Unverified,Admin Lead,Mount alias of /api/admin/overview
+API Alias (/internal/admin),GET /internal/admin/linkedin-accounts,/internal/admin/linkedin-accounts,server/src/app.ts:142 (admin.routes.ts:32),None,Unverified,Admin Lead,Mount alias of /api/admin/linkedin-accounts
+API Alias (/internal/admin),POST /internal/admin/linkedin-accounts/:id/disconnect,/internal/admin/linkedin-accounts/:id/disconnect,server/src/app.ts:142 (admin.routes.ts:33),None,Unverified,Admin Lead,Mount alias of /api/admin/linkedin-accounts/:id/disconnect
+API Alias (/internal/admin),POST /internal/admin/linkedin-accounts/:id/check-health,/internal/admin/linkedin-accounts/:id/check-health,server/src/app.ts:142 (admin.routes.ts:34),None,Unverified,Admin Lead,Mount alias of /api/admin/linkedin-accounts/:id/check-health
+API Alias (/internal/admin),GET /internal/admin/users,/internal/admin/users,server/src/app.ts:142 (admin.routes.ts:37),None,Unverified,Admin Lead,Mount alias of /api/admin/users
+API Alias (/internal/admin),GET /internal/admin/settings/unipile,/internal/admin/settings/unipile,server/src/app.ts:142 (admin.routes.ts:40),None,Unverified,Admin Lead,Mount alias of /api/admin/settings/unipile
+API Alias (/internal/admin),POST /internal/admin/settings/unipile,/internal/admin/settings/unipile,server/src/app.ts:142 (admin.routes.ts:41),None,Unverified,Admin Lead,Mount alias of /api/admin/settings/unipile
+API Alias (/internal/admin),POST /internal/admin/settings/unipile/test,/internal/admin/settings/unipile/test,server/src/app.ts:142 (admin.routes.ts:42),None,Unverified,Admin Lead,Mount alias of /api/admin/settings/unipile/test
+API Alias (/internal/admin),GET /internal/admin/settings/gemini,/internal/admin/settings/gemini,server/src/app.ts:142 (admin.routes.ts:45),None,Unverified,Admin Lead,Mount alias of /api/admin/settings/gemini
+API Alias (/internal/admin),POST /internal/admin/settings/gemini,/internal/admin/settings/gemini,server/src/app.ts:142 (admin.routes.ts:46),None,Unverified,Admin Lead,Mount alias of /api/admin/settings/gemini
+API Alias (/internal/admin),POST /internal/admin/settings/gemini/test,/internal/admin/settings/gemini/test,server/src/app.ts:142 (admin.routes.ts:47),None,Unverified,Admin Lead,Mount alias of /api/admin/settings/gemini/test
+API Alias (/internal/admin),GET /internal/admin/queue/stats,/internal/admin/queue/stats,server/src/app.ts:142 (admin.routes.ts:50),None,Unverified,Admin Lead,Mount alias of /api/admin/queue/stats
+API Alias (/internal/admin),GET /internal/admin/automation/health,/internal/admin/automation/health,server/src/app.ts:142 (admin.routes.ts:53),None,Unverified,Admin Lead,Mount alias of /api/admin/automation/health
+API Alias (/internal/admin),POST /internal/admin/daily-agent/run/:userId,/internal/admin/daily-agent/run/:userId,server/src/app.ts:142 (admin.routes.ts:56),None,Unverified,Admin Lead,Mount alias of /api/admin/daily-agent/run/:userId
+API Alias (/internal/admin),POST /internal/admin/message-agent/simulate-webhook,/internal/admin/message-agent/simulate-webhook,server/src/app.ts:142 (admin.routes.ts:59),None,Unverified,Admin Lead,Mount alias of /api/admin/message-agent/simulate-webhook
+API Alias (/internal/admin),POST /internal/admin/message-agent/process-job/:jobId,/internal/admin/message-agent/process-job/:jobId,server/src/app.ts:142 (admin.routes.ts:60),None,Unverified,Admin Lead,Mount alias of /api/admin/message-agent/process-job/:jobId
+API Alias (/api/webhook),POST /api/webhook,/api/webhook,server/src/app.ts:145 (webhook.routes.ts:7),test-unipile-webhook.ts,Partial,Integrations Lead,Mount alias of /api/webhooks/
+API Alias (/api/webhook),POST /api/webhook/unipile,/api/webhook/unipile,server/src/app.ts:145 (webhook.routes.ts:8),test-unipile-webhook.ts,Partial,Integrations Lead,Mount alias of /api/webhooks/unipile
+API Alias (/api/webhook),POST /api/webhook/messages,/api/webhook/messages,server/src/app.ts:145 (webhook.routes.ts:9),test-unipile-webhook.ts,Partial,Integrations Lead,Mount alias of /api/webhooks/messages
+API Alias (/api/webhook),POST /api/webhook/unipile/messages,/api/webhook/unipile/messages,server/src/app.ts:145 (webhook.routes.ts:10),test-unipile-webhook.ts,Partial,Integrations Lead,Mount alias of /api/webhooks/unipile/messages
+API Alias (/api/user/settings),GET /api/user/settings/gemini,/api/user/settings/gemini,server/src/app.ts:147 (settings.routes.ts:8),test-gemini-byok.ts,Partial,Full-Stack Lead,Mount alias of /api/settings/gemini
+API Alias (/api/user/settings),POST /api/user/settings/gemini,/api/user/settings/gemini,server/src/app.ts:147 (settings.routes.ts:11),test-gemini-byok.ts,Partial,Full-Stack Lead,Mount alias of /api/settings/gemini
+API Alias (/api/user/settings),POST /api/user/settings/gemini/test,/api/user/settings/gemini/test,server/src/app.ts:147 (settings.routes.ts:14),test-gemini-byok.ts,Partial,Full-Stack Lead,Mount alias of /api/settings/gemini/test
+API Alias (/api/user/settings),DELETE /api/user/settings/gemini,/api/user/settings/gemini,server/src/app.ts:147 (settings.routes.ts:17),test-gemini-byok.ts,Partial,Full-Stack Lead,Mount alias of /api/settings/gemini

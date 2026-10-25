@@ -1,0 +1,489 @@
+================================================================================
+WORKPILOT WP-02 SANITIZED RAW TEST EXECUTION AUDIT EVIDENCE
+Baseline Commit: d4605327b523a11d362afc45620dd759c601a5bf
+Audit Date:      2026-10-24 14:15:01
+Auditor / Agent: Antigravity AI
+Host Environment:Windows-11-10.0.26200-SP0 (Node v24.22.1, npm 12.2.1, Python 3.13.14, Git 2.54.0.windows.1)
+Working Tree:    NOT CLEAN (1 staged deletion, 16 modified files, 4 untracked paths)
+================================================================================
+
+--------------------------------------------------------------------------------
+[BASELINE EVIDENCE 0A] Git Head Verification
+Command:   git rev-parse HEAD
+Directory: .
+Exit Code: 0
+--------------------------------------------------------------------------------
+d4605327b523a11d362afc45620dd759c601a5bf
+
+--------------------------------------------------------------------------------
+[BASELINE EVIDENCE 0B] Git Working Tree Status (Preserving WP-01 Remediations)
+Command:   git status --short
+Directory: .
+Exit Code: 0
+--------------------------------------------------------------------------------
+ M .dockerignore
+ M .github/workflows/deploy-production.yml
+ M .gitignore
+ M client/.dockerignore
+D  deploy.tar.gz
+ M deploy/aws/deploy-remote.ps1
+ M package.json
+ M server/.dockerignore
+ M server/check-role.cjs
+ M server/check_unipile.mjs
+ M server/get-accounts.ts
+ M server/src/db/index.ts
+ M server/src/scripts/assign-admin.ts
+ M server/src/scripts/clear-all-users.ts
+ M server/src/scripts/reset-admin.ts
+ M server/src/utils/error.util.ts
+ M server/test-batch-dm.mts
+?? audit-evidence/
+?? scripts/scan-secrets.mjs
+?? scripts/test-config-validation.mjs
+?? scripts/test-secret-scanner.mjs
+
+--------------------------------------------------------------------------------
+[BASELINE EVIDENCE 0C] Git Unstaged Working Tree Diff
+Command:   git diff --stat
+Directory: .
+Exit Code: 0
+--------------------------------------------------------------------------------
+ .dockerignore                           | 12 +++++++
+ .github/workflows/deploy-production.yml | 11 +++++++
+ .gitignore                              | 15 +++++++++
+ client/.dockerignore                    | 11 ++++++-
+ deploy/aws/deploy-remote.ps1            | 30 +++++++++++++----
+ package.json                            |  6 +++-
+ server/.dockerignore                    | 11 ++++++-
+ server/check-role.cjs                   | 24 ++++++++++++--
+ server/check_unipile.mjs                | 57 +++++++++++++++++++++++++--------
+ server/get-accounts.ts                  | 11 ++++++-
+ server/src/db/index.ts                  | 14 +++++---
+ server/src/scripts/assign-admin.ts      | 33 ++++++++++++-------
+ server/src/scripts/clear-all-users.ts   |  8 +++--
+ server/src/scripts/reset-admin.ts       | 27 ++++++++++------
+ server/src/utils/error.util.ts          | 17 ++++++++--
+ server/test-batch-dm.mts                | 10 ++++--
+ 16 files changed, 237 insertions(+), 60 deletions(-)
+
+--------------------------------------------------------------------------------
+[BASELINE EVIDENCE 0D] Git Staged Changes Diff
+Command:   git diff --cached --stat
+Directory: .
+Exit Code: 0
+--------------------------------------------------------------------------------
+ deploy.tar.gz | Bin 1086 -> 0 bytes
+ 1 file changed, 0 insertions(+), 0 deletions(-)
+
+--------------------------------------------------------------------------------
+[BASELINE EVIDENCE 0E] Dependency Lockfile Integrity Verification
+Commands:
+  git diff -- package-lock.json server/package-lock.json client/package-lock.json
+  python -c "import hashlib... sha256 digests"
+Directory: .
+Exit Code: 0
+--------------------------------------------------------------------------------
+git diff output: (empty - zero tracked changes)
+SHA-256 Hashes:
+package-lock.json (Root)   : 8209d8b1ff52eb7473dc4b2ab61ae811546e28c1b83e85028486eac541157c94
+client/package-lock.json   : b01e60f9622f3bde54e404ed746001fd34ae6aeca3af60f8684a8fb3525ce178
+server/package-lock.json   : f4faf7838106c970f4b66b536d1b03ac8a901938b088f86a6e5f0a1a6ac60237
+Status: PASS - Lockfiles perfectly preserved; npm install in server/ did not modify any tracked lockfile.
+
+
+--------------------------------------------------------------------------------
+[BASELINE EVIDENCE 0F] Genuine TypeScript / ESTree AST Route & Endpoint Inventory
+Command:   npx tsx src/scripts/ast-route-inventory.ts
+Directory: server/
+Exit Code: 0
+AST Engine:esbuild TS Desugaring + Acorn ESTree Parser + Acorn-Walk AST Traversal
+--------------------------------------------------------------------------------
+================================================================================
+WORKPILOT OFFICIAL ESTREE AST ROUTE & ENDPOINT INVENTORY
+AST Engine: esbuild TS Desugaring + Acorn ESTree Parser + Acorn-Walk AST Traversal
+Routes Directory: C:\Users\Admin\OneDrive\Desktop\unipile\server\src\routes
+Application Host: C:\Users\Admin\OneDrive\Desktop\unipile\server\src\app.ts
+================================================================================
+
+--- PART 1: Express Router Mount Declarations in server/src/app.ts ---
+Total Router Mount Calls: 15
+
+  Line 116: app.use("/api/auth", authRoutes) -> auth.routes.ts
+  Line 117: app.use("/api/linkedin", linkedinRoutes) -> linkedin.routes.ts
+  Line 118: app.use("/api", queueRoutes) -> queue.routes.ts
+  Line 119: app.use("/api", conversationRoutes) -> conversation.routes.ts
+  Line 120: app.use("/api", engagementRoutes) -> engagement.routes.ts
+  Line 121: app.use("/api", dashboardRoutes) -> dashboard.routes.ts
+  Line 122: app.use("/api/admin", adminRoutes) -> admin.routes.ts
+  Line 123: app.use("/internal/admin", adminRoutes) -> admin.routes.ts
+  Line 124: app.use("/api/agent", agentRoutes) -> agent.routes.ts
+  Line 125: app.use("/api/webhooks", webhookRoutes) -> webhook.routes.ts
+  Line 126: app.use("/api/webhook", webhookRoutes) -> webhook.routes.ts
+  Line 127: app.use("/api/settings", settingsRoutes) -> settings.routes.ts
+  Line 128: app.use("/api/user/settings", settingsRoutes) -> settings.routes.ts
+  Line 129: app.use("/api/billing", billingRoutes) -> billing.routes.ts
+  Line 130: app.use("/api/contact", contactRoutes) -> contact.routes.ts
+
+--- PART 2: Declared Route Handlers by Route File (AST CallExpressions) ---
+  admin.routes.ts          :  16 CallExpressions ->  16 (Method, Path) endpoints
+  agent.routes.ts          :  17 CallExpressions ->  17 (Method, Path) endpoints
+  auth.routes.ts           :   9 CallExpressions ->   9 (Method, Path) endpoints
+  billing.routes.ts        :   4 CallExpressions ->   4 (Method, Path) endpoints
+  contact.routes.ts        :   1 CallExpressions ->   1 (Method, Path) endpoints
+  conversation.routes.ts   :  10 CallExpressions ->  10 (Method, Path) endpoints
+  dashboard.routes.ts      :   9 CallExpressions ->   9 (Method, Path) endpoints
+  engagement.routes.ts     :   3 CallExpressions ->   3 (Method, Path) endpoints
+  linkedin.routes.ts       :  44 CallExpressions ->  44 (Method, Path) endpoints
+  queue.routes.ts          :   7 CallExpressions ->   7 (Method, Path) endpoints
+  settings.routes.ts       :   4 CallExpressions ->   4 (Method, Path) endpoints
+  webhook.routes.ts        :   4 CallExpressions ->   4 (Method, Path) endpoints
+
+Subtotal Route Files: 128 CallExpressions declaring 128 (Method, Path) endpoints across 12 files.
+
+--- PART 3: Direct App Route Declarations in server/src/app.ts ---
+  Line  80: GET /api/health (1 handlers/middlewares)
+  Line  80: GET /api/health/liveness (1 handlers/middlewares)
+  Line 108: GET /api/health/readiness (1 handlers/middlewares)
+Subtotal Direct App Endpoints: 2 CallExpressions declaring 3 endpoints.
+
+--- PART 4: Reachable HTTP URLs (Resolving Mount Prefixes & Mount Aliases) ---
+Reachable URL Breakdown:
+  1. Direct Express App Endpoints:     3
+  2. Primary Mounted Endpoints:     128
+  3. Mount Alias Endpoints:           24
+  -----------------------------------------
+  Total Reachable HTTP API URLs:    155
+
+--- PART 5: Route Shadowing & Ambiguity Analysis ---
+⚠️  Detected 2 Shadowed / Overlapping Route Registrations:
+
+  - [OVERLAP] GET /api/health/liveness:
+      Defined at server/src/app.ts:80 (Mount: [direct], Alias: false)
+      Defined at server/src/routes/dashboard.routes.ts:12 (Mount: /api, Alias: false)
+      Runtime Resolution: Express executes middleware sequentially in registration order.
+      The route registered first in app.ts will handle the request; later registrations are shadowed.
+
+  - [OVERLAP] GET /api/health/readiness:
+      Defined at server/src/app.ts:108 (Mount: [direct], Alias: false)
+      Defined at server/src/routes/dashboard.routes.ts:13 (Mount: /api, Alias: false)
+      Runtime Resolution: Express executes middleware sequentially in registration order.
+      The route registered first in app.ts will handle the request; later registrations are shadowed.
+
+================================================================================
+FINAL AUTHORITATIVE AST AUDIT TOTALS:
+  1. AST Route CallExpressions in routes/:      128
+  2. Declared (Method, Path) pairs in routes/:  128
+  3. Direct App Endpoints in app.ts:            3 (across 2 CallExpressions)
+  4. Total Unique Route Implementations:        131
+  5. Total Mount Aliases:                       24
+  6. Total Reachable HTTP API Endpoints:        155
+================================================================================
+
+--------------------------------------------------------------------------------
+[RUN 1] Repository Secret Scanner (Static Analysis)
+Command:   node scripts/scan-secrets.mjs
+Directory: .
+Exit Code: 0
+--------------------------------------------------------------------------------
+🔍 [SECRET SCANNER] Scanning target: c:\Users\Admin\OneDrive\Desktop\unipile
+
+✅ [PASSED] Secret scan clean. Zero live credentials detected.
+
+--------------------------------------------------------------------------------
+[RUN 2] Secret Scanner Regression Test (Controlled Canary Defect Demonstration)
+Command:   node scripts/test-secret-scanner.mjs
+Directory: .
+Exit Code: 0
+--------------------------------------------------------------------------------
+======================================================
+🧪 RUNNING SECRET SCANNER REGRESSION TEST SUITE
+======================================================
+
+[Phase 1] Scanning baseline repository...
+🔍 [SECRET SCANNER] Scanning target: c:\Users\Admin\OneDrive\Desktop\unipile
+✓ Baseline scan clean (0 findings)
+
+[Phase 2] Introducing dummy canary secret fixture...
+✓ Created isolated test fixture: scripts\test-fixtures\canary-secret.tmp
+[Phase 3] Scanning fixture to verify secret detection...
+🔍 [SECRET SCANNER] Scanning target: c:\Users\Admin\OneDrive\Desktop\unipile\scripts\test-fixtures
+✓ Scanner detected 1 finding(s) as expected:
+    - Rule: High-Entropy Secret Canary (File: scripts/test-fixtures/canary-secret.tmp:1)
+✓ Injected dummy secret successfully caught by scanner!
+
+[Phase 4] Cleaning up dummy secret fixture...
+✓ Dummy secret fixture cleanly removed
+
+[Phase 5] Re-scanning repository after cleanup...
+🔍 [SECRET SCANNER] Scanning target: c:\Users\Admin\OneDrive\Desktop\unipile
+✓ Post-cleanup scan clean (0 findings)
+
+======================================================
+🎉 ALL SECRET SCANNER REGRESSION TESTS PASSED!
+======================================================
+
+--------------------------------------------------------------------------------
+[RUN 3] Production Configuration Validation & Sensitive Data Redaction
+Command:   node scripts/test-config-validation.mjs
+Directory: .
+Exit Code: 0
+--------------------------------------------------------------------------------
+======================================================
+🧪 CONFIGURATION VALIDATION & SENSITIVE DATA TESTS
+======================================================
+
+[Test 1] Testing production configuration validation rules...
+✓ Throws when JWT_SECRET is missing
+✓ Throws when JWT_SECRET is shorter than 32 characters
+✓ Throws when DATABASE_URL contains localhost in production
+✓ Successfully passes with valid production configuration
+
+[Test 2] Testing sensitive error and log redaction...
+✓ Database URL password redacted: Connection failed: postgresql://neondb_owner:[REDACTED]@ep-pooler.neon.tech/neondb?sslmode=require
+✓ Bearer token redacted: Authorization header: Bearer [REDACTED]
+✓ API key redacted: Request failed with api_key: [REDACTED]
+
+[Test 3] Verifying standalone scripts fail gracefully when DATABASE_URL is missing...
+✓ server/check-role.cjs exits cleanly with code 1 on missing DATABASE_URL
+✓ server/check_unipile.mjs exits cleanly with code 1 on missing DATABASE_URL
+
+======================================================
+🎉 ALL CONFIGURATION VALIDATION TESTS PASSED!
+======================================================
+
+--------------------------------------------------------------------------------
+[RUN 4] Short-Term Memory & Tenant Isolation Test (Isolated MemorySaver)
+Command:   npx tsx src/scripts/test-agent-memory.ts
+Directory: ./server
+Exit Code: 0
+--------------------------------------------------------------------------------
+◇ injected env (20) from .env // tip: ⌁ auth for agents [www.vestauth.com]
+===================================================================
+🧪 WORKPILOT Short-Term Memory & User Separation Verification Test
+   Reference: https://docs.langchain.com/oss/javascript/langchain/short-term-memory
+===================================================================
+
+🧹 [AGENT MEMORY] Short-term memory cleared for user user-uuid-aaaa-1111.
+🧹 [AGENT MEMORY] Short-term memory cleared for user user-uuid-bbbb-2222.
+📦 Test 1: Verifying isolated MemorySaver checkpointers per user...
+✅ User A and User B have separate, dedicated MemorySaver instances!
+
+🧠 Test 2: Multi-Turn Short-Term Memory Retention (Remember what was done previously)...
+  Turn 1: User A sends 'Find 3 AI engineers in London'...
+  Agent Turn 1 Reply: "I found 3 AI engineers in London: 1. Oliver Smith, 2. Charlotte Brown, 3. Liam Davies."
+  State message count after Turn 1: 2 messages
+  Turn 2: User A sends 'Send connection request to the second person' (referencing Turn 1)...
+  Agent Turn 2 Reply: "Understood. I will prepare an invite for Charlotte Brown (the second person)."
+  State message count after Turn 2: 4 messages
+  Short-term conversation history retained for User A:
+    [1] human: "Find 3 AI engineers in London"
+    [2] ai: "I found 3 AI engineers in London: 1. Oliver Smith, 2. Charlotte Brown,"
+    [3] human: "Send connection request to the second person"
+    [4] ai: "Understood. I will prepare an invite for Charlotte Brown (the second p"
+✅ Turn 1 context seamlessly retained into Turn 2 via short-term memory!
+
+🔒 Test 3: Strict User Isolation (Verifying User B cannot see User A's memory)...
+  User B asks: 'Who was the second person?' (testing if User A's data leaks)...
+  Agent User B Reply: "I don't have any previous context about leads yet. How can I help you?"
+  User B state messages count: 2
+✅ 100% User Isolation verified: User B's short-term memory has ZERO data from User A!
+
+📋 Test 4: Verifying In-Memory Session History for UI Hydration...
+  User A session history count: 2
+  User B session history count: 1
+✅ Session histories correctly separated per user!
+
+🧹 Test 5: Resetting User A Short-Term Memory...
+🧹 [AGENT MEMORY] Short-term memory cleared for user user-uuid-aaaa-1111.
+✅ User A short-term memory cleared cleanly, while User B's memory remained intact!
+
+🎉 ALL SHORT-TERM MEMORY & USER ISOLATION TESTS PASSED PERFECTLY!
+
+npm notice run server@1.0.0 npx
+npm notice run tsx src/scripts/test-agent-memory.ts
+
+--------------------------------------------------------------------------------
+[RUN 5] Multi-Step Subgraphs, InMemoryStore, & Stop Control Test
+Command:   npx tsx src/scripts/test-multistep-subgraphs.ts
+Directory: ./server
+Exit Code: 0
+--------------------------------------------------------------------------------
+◇ injected env (20) from .env // tip: ⌘ suppress logs { quiet: true }
+🧪 Starting Multi-Step Subgraphs, Stores, HIL, & Stop Control Verification...
+
+📦 Test 1: LangGraph InMemoryStore Key-Value Storage...
+✅ InMemoryStore successfully stored and retrieved lead data!
+
+🚀 Test 2: Batch Outreach Subgraph Execution (5 Candidates: 2 with Note, 3 Blank)...
+Batch Subgraph Queue Length: 5
+Queue Allocation: [
+  {
+    index: 1,
+    name: 'Aditya Verma',
+    withNote: true,
+    note: 'Hi Aditya, loved your work as Lead ...'
+  },
+  {
+    index: 2,
+    name: 'Sneha Reddy',
+    withNote: true,
+    note: 'Hi Sneha, loved your work as Princi...'
+  },
+  {
+    index: 3,
+    name: 'Rohan Gupta',
+    withNote: false,
+    note: '[Blank / No Note]'
+  },
+  {
+    index: 4,
+    name: 'Ananya Iyer',
+    withNote: false,
+    note: '[Blank / No Note]'
+  },
+  {
+    index: 5,
+    name: 'Vikram Malhotra',
+    withNote: false,
+    note: '[Blank / No Note]'
+  }
+]
+Generated Summary Table Preview:
+### 🚀 Multi-Step Batch Outreach Report
+
+**Summary**: Successfully dispatched **0** of **5** connection requests.
+- ✍️ **With Personalized Note**: 0
+- ✉️ **Blank Invitations (No Note)**: 0
+- ⚠️ **Failed / Errors**: 5
+
+| # | Prospect Name | Headline | Strategy | Status |
+|---|---------------|----------|----------|--------|
+| 1 | **Aditya Verma** | Lead AI Scientist | ✍️ Personalized Note | ❌ Failed |
+| 2 | **Sneha Reddy** | Principal ML Engineer | ✍️ Personalized Note | ❌ Failed |
+| 3 | **Rohan Gupta** | Full Stack Engineer | ✉️ Blank (No Note) | ❌ Failed |
+| 4 | **Ananya Iyer** | VP of Engineering | ✉️ Blank (No Note) | ❌ Failed |
+| 5 | **Vikram Malhotra** | Founder & CTO | ✉️ Blank (No Note) | ❌ Failed |
+
+✅ Batch Outreach Subgraph properly orchestrated all 5 candidates with 2 personalized and 3 blank!
+
+🛑 Test 3: Stop / Interrupt Backend Cancellation Mechanism...
+✅ Thread cancellation and AbortSignal stop control verified!
+
+🔧 Test 4: Tool System Declarations & Router Registration...
+Registered Tools (18): [
+  'search_linkedin_leads',
+  'send_connection_request',
+  'batch_send_connection_requests',
+  'research_and_batch_connect',
+  'send_linkedin_message',
+  'schedule_autonomous_campaign',
+  'get_account_safety_and_limits',
+  'get_pending_invitations',
+  'manage_invitation',
+  'get_inbox_conversations',
+  'emergency_pause_automation',
+  'resume_automation',
+  'get_own_profile_and_rating',
+  'update_profile_headline',
+  'create_linkedin_post',
+  'get_own_posts',
+  'get_existing_connections',
+  'message_existing_connections'
+]
+✅ All new tools verified in router and agent toolkit!
+
+🎉 ALL MULTI-STEP LANGGRAPH & STOP CONTROL TESTS PASSED SUCCESSFULLY!
+
+npm notice run server@1.0.0 npx
+npm notice run tsx src/scripts/test-multistep-subgraphs.ts
+
+--------------------------------------------------------------------------------
+[RUN 6] Controlled Defect Injection & Restoration Demonstration (Critical Assertion Drill)
+Target File: server/src/scripts/test-agent-memory.ts
+Assertion:   assert(checkpointerA !== checkpointerB, "User A and User B MUST NOT share the same MemorySaver instance!")
+
+[Phase 1 - Injected Defect Execution]
+Injected:    const checkpointerB = checkpointerA; (Intentional violation of cross-tenant memory isolation)
+Command:     npx tsx src/scripts/test-agent-memory.ts
+Exit Code:   1 (Expected failure: 1)
+Output:
+◇ injected env (20) from .env // tip: ⌘ suppress logs { quiet: true }
+===================================================================
+🧪 WORKPILOT Short-Term Memory & User Separation Verification Test
+   Reference: https://docs.langchain.com/oss/javascript/langchain/short-term-memory
+===================================================================
+
+🧹 [AGENT MEMORY] Short-term memory cleared for user user-uuid-aaaa-1111.
+🧹 [AGENT MEMORY] Short-term memory cleared for user user-uuid-bbbb-2222.
+📦 Test 1: Verifying isolated MemorySaver checkpointers per user...
+npm notice run server@1.0.0 npx
+npm notice run tsx src/scripts/test-agent-memory.ts
+❌ Test failed: Error: User A and User B MUST NOT share the same MemorySaver instance!
+    at runTest (c:\Users\Admin\OneDrive\Desktop\unipile\server\src\scripts\test-agent-memory.ts:31:11)
+
+[Phase 2 - Defect-Free Restoration Execution]
+Restored:    const checkpointerB = agentMemoryService.getUserCheckpointer(userB);
+Command:     npx tsx src/scripts/test-agent-memory.ts
+Exit Code:   0 (Expected clean pass: 0)
+Output:
+◇ injected env (20) from .env // tip: ◈ secrets for agents [www.dotenvx.com]
+===================================================================
+🧪 WORKPILOT Short-Term Memory & User Separation Verification Test
+   Reference: https://docs.langchain.com/oss/javascript/langchain/short-term-memory
+===================================================================
+
+🧹 [AGENT MEMORY] Short-term memory cleared for user user-uuid-aaaa-1111.
+🧹 [AGENT MEMORY] Short-term memory cleared for user user-uuid-bbbb-2222.
+📦 Test 1: Verifying isolated MemorySaver checkpointers per user...
+✅ User A and User B have separate, dedicated MemorySaver instances!
+
+🧠 Test 2: Multi-Turn Short-Term Memory Retention (Remember what was done previously)...
+  Turn 1: User A sends 'Find 3 AI engineers in London'...
+  Agent Turn 1 Reply: "I found 3 AI engineers in London: 1. Oliver Smith, 2. Charlotte Brown, 3. Liam Davies."
+  State message count after Turn 1: 2 messages
+  Turn 2: User A sends 'Send connection request to the second person' (referencing Turn 1)...
+  Agent Turn 2 Reply: "Understood. I will prepare an invite for Charlotte Brown (the second person)."
+  State message count after Turn 2: 4 messages
+  Short-term conversation history retained for User A:
+    [1] human: "Find 3 AI engineers in London"
+    [2] ai: "I found 3 AI engineers in London: 1. Oliver Smith, 2. Charlotte Brown,"
+    [3] human: "Send connection request to the second person"
+    [4] ai: "Understood. I will prepare an invite for Charlotte Brown (the second p"
+✅ Turn 1 context seamlessly retained into Turn 2 via short-term memory!
+
+🔒 Test 3: Strict User Isolation (Verifying User B cannot see User A's memory)...
+  User B asks: 'Who was the second person?' (testing if User A's data leaks)...
+  Agent User B Reply: "I don't have any previous context about leads yet. How can I help you?"
+  User B state messages count: 2
+✅ 100% User Isolation verified: User B's short-term memory has ZERO data from User A!
+
+📋 Test 4: Verifying In-Memory Session History for UI Hydration...
+  User A session history count: 2
+  User B session history count: 1
+✅ Session histories correctly separated per user!
+
+🧹 Test 5: Resetting User A Short-Term Memory...
+🧹 [AGENT MEMORY] Short-term memory cleared for user user-uuid-aaaa-1111.
+✅ User A short-term memory cleared cleanly, while User B's memory remained intact!
+
+🎉 ALL SHORT-TERM MEMORY & USER ISOLATION TESTS PASSED PERFECTLY!
+
+npm notice run server@1.0.0 npx
+npm notice run tsx src/scripts/test-agent-memory.ts
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+[BLOCKED & SKIPPED TESTS LOG]
+Safety Protocol: Offline execution boundary enforced.
+1. server/src/scripts/test-phase1.ts: SKIPPED / BLOCKED
+   Reason: Unsafe. Initiates live Unipile HTTP requests (api60.unipile.com) and real LinkedIn API calls. Mock provider stub not implemented.
+2. server/src/scripts/test-phase2.ts: SKIPPED / BLOCKED
+   Reason: Unsafe. Attempts to dispatch real action queue items without isolated database sandbox.
+3. server/src/scripts/test-phase4.ts: SKIPPED / BLOCKED
+   Reason: Unsafe. Attempts to interact with live LinkedIn posts.
+4. server/src/scripts/test-linkedin-connect.ts: SKIPPED / BLOCKED
+   Reason: Unsafe. Requires live Unipile gateway authentication session.
+5. server/src/scripts/test-security.ts (Live Port 4000 Mode): SKIPPED
+   Reason: Requires live active Express server on port 4000 and Neon PostgreSQL cloud pooler connection.
+--------------------------------------------------------------------------------

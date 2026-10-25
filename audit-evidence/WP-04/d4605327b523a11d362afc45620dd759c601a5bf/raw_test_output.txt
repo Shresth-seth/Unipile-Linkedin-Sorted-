@@ -1,0 +1,113 @@
+================================================================================
+WP-04 VERIFICATION RUN - EXACT COMMAND OUTPUTS & EXIT CODES
+Run ID: wp04-closure-pass-20261025
+Timestamp: 2026-10-25T17:30:00+05:30
+Commit Baseline: d4605327b523a11d362afc45620dd759c601a5bf
+Environment: Windows PowerShell / Node.js v24.22.1
+================================================================================
+
+--------------------------------------------------------------------------------
+COMMAND 1: Server Vitest Suite Execution (All 9 Test Files)
+Directory: C:\Users\Admin\OneDrive\Desktop\unipile\server
+CommandLine: npm test
+Exit Code: 0
+--------------------------------------------------------------------------------
+Output:
+npm notice run server@1.0.0 test
+npm notice run vitest run
+
+ RUN  v5.0.5 C:/Users/Admin/OneDrive/Desktop/unipile/server
+
+ ✓ src/__tests__/unit/error-sanitization.test.ts (12 tests) 11ms
+ ✓ src/__tests__/unit/webhook-auth.test.ts (10 tests) 9ms
+ ✓ src/__tests__/unit/network-guard.test.ts (10 tests) 14ms
+ ✓ src/__tests__/unit/crm-stage-defect.test.ts (6 tests) 25ms
+ ✓ src/__tests__/unit/database-safety.test.ts (12 tests) 21ms
+ ✓ src/__tests__/unit/migrated-legacy.test.ts (7 tests) 179ms
+ ✓ src/__tests__/unit/tenant-isolation.test.ts (21 tests) 92ms
+ ✓ src/__tests__/integration/http-routes.test.ts (27 tests) 509ms
+ ✓ src/__tests__/unit/database-integrity.test.ts (8 tests) 5995ms
+
+ Test Files  9 passed (9)
+      Tests  108 passed (108)
+   Start at  17:29:49
+   Duration  9.39s (import 73%, tests 19%, transform 5%, setup 3%, worker 1%)
+
+
+--------------------------------------------------------------------------------
+COMMAND 2: Server TypeScript Typecheck (tsc --noEmit)
+Directory: C:\Users\Admin\OneDrive\Desktop\unipile\server
+CommandLine: npm run typecheck
+Exit Code: 0
+--------------------------------------------------------------------------------
+Output:
+npm notice run server@1.0.0 typecheck
+npm notice run tsc --noEmit
+
+
+--------------------------------------------------------------------------------
+COMMAND 3: Repository-Wide Security & Config Validation Suite
+Directory: C:\Users\Admin\OneDrive\Desktop\unipile
+CommandLine: npm run test:all-security
+Exit Code: 0
+--------------------------------------------------------------------------------
+Output:
+npm notice run iris-connect@1.0.0 test:all-security
+npm notice run npm run security:scan && npm run test:security-scan && npm run test:config-validation
+npm notice run iris-connect@1.0.0 security:scan
+npm notice run node scripts/scan-secrets.mjs
+🔍 [SECRET SCANNER] Scanning target: C:\Users\Admin\OneDrive\Desktop\unipile
+
+✅ [PASSED] Secret scan clean. Zero live credentials detected.
+npm notice run iris-connect@1.0.0 test:security-scan
+npm notice run node scripts/test-secret-scanner.mjs
+======================================================
+🧪 RUNNING SECRET SCANNER REGRESSION TEST SUITE
+======================================================
+
+[Phase 1] Scanning baseline repository...
+🔍 [SECRET SCANNER] Scanning target: C:\Users\Admin\OneDrive\Desktop\unipile
+✓ Baseline scan clean (0 findings)
+
+[Phase 2] Introducing dummy canary secret fixture...
+✓ Created isolated test fixture: scripts\test-fixtures\canary-secret.tmp
+[Phase 3] Scanning fixture to verify secret detection...
+🔍 [SECRET SCANNER] Scanning target: C:\Users\Admin\OneDrive\Desktop\unipile\scripts\test-fixtures
+✓ Scanner detected 1 finding(s) as expected:
+    - Rule: High-Entropy Secret Canary (File: scripts/test-fixtures/canary-secret.tmp:1)
+✓ Injected dummy secret successfully caught by scanner!
+
+[Phase 4] Cleaning up dummy secret fixture...
+✓ Dummy secret fixture cleanly removed
+
+[Phase 5] Re-scanning repository after cleanup...
+🔍 [SECRET SCANNER] Scanning target: C:\Users\Admin\OneDrive\Desktop\unipile
+✓ Post-cleanup scan clean (0 findings)
+
+======================================================
+🎉 ALL SECRET SCANNER REGRESSION TESTS PASSED!
+======================================================
+npm notice run iris-connect@1.0.0 test:config-validation
+npm notice run node scripts/test-config-validation.mjs
+======================================================
+🧪 CONFIGURATION VALIDATION & SENSITIVE DATA TESTS
+======================================================
+
+[Test 1] Testing production configuration validation rules...
+✓ Throws when JWT_SECRET is missing
+✓ Throws when JWT_SECRET is shorter than 32 characters
+✓ Throws when DATABASE_URL contains localhost in production
+✓ Successfully passes with valid production configuration
+
+[Test 2] Testing sensitive error and log redaction...
+✓ Database URL password redacted: Connection failed: postgresql://neondb_owner:[REDACTED]@ep-pooler.neon.tech/neondb?sslmode=require
+✓ Bearer token redacted: Authorization header: Bearer [REDACTED]
+✓ API key redacted: Request failed with api_key: [REDACTED]
+
+[Test 3] Verifying standalone scripts fail gracefully when DATABASE_URL is missing...
+✓ server/check-role.cjs exits cleanly with code 1 on missing DATABASE_URL
+✓ server/check_unipile.mjs exits cleanly with code 1 on missing DATABASE_URL
+
+======================================================
+🎉 ALL CONFIGURATION VALIDATION TESTS PASSED!
+======================================================

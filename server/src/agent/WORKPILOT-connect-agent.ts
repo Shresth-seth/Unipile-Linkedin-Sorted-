@@ -206,7 +206,14 @@ export async function chatWithWORKPILOTAgent(params: ChatAgentParams): Promise<{
     };
   }
 
-  const activeUserId = params.userId || "83efcc7b-d348-429f-a454-770a2a540dbe";
+  if (!params.userId) {
+    return {
+      reply: "❌ Authentication required. User ID context must be provided to interact with the WorkPilot agent.",
+      toolCallsExecuted: [],
+    };
+  }
+
+  const activeUserId = params.userId;
   const threadId = agentMemoryService.getUserThreadId(
     activeUserId,
     params.threadId,
@@ -899,7 +906,17 @@ export async function executeAutonomousCampaignWorkflow(
     location?: string | undefined;
   }>;
 }> {
-  const userId = params.userId || "83efcc7b-d348-429f-a454-770a2a540dbe";
+  if (!params.userId) {
+    return {
+      success: false,
+      summary: "Authentication required. User ID context must be provided to run an outreach workflow.",
+      discovered: 0,
+      enqueued: 0,
+      candidates: [],
+    };
+  }
+
+  const userId = params.userId;
   const userSettings = agentMemoryService.getUserSettings(userId);
   const userDailyLimit = Math.min(
     Math.max(Number(userSettings?.dailyQuota) || 10, 1),

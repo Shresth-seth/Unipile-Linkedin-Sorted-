@@ -1,0 +1,15 @@
+diff --git a/server/src/controllers/dashboard.controller.ts b/server/src/controllers/dashboard.controller.ts
+index aae37a3..6b5d450 100644
+--- a/server/src/controllers/dashboard.controller.ts
++++ b/server/src/controllers/dashboard.controller.ts
+@@ -98,6 +98,10 @@ export class DashboardController {
+       res.status(200).json({ success: true, data: updated });
+     } catch (error: any) {
+       console.error("Failed to update contact stage:", error);
++      if (error?.message && error.message.toLowerCase().includes("not found")) {
++        res.status(404).json({ success: false, error: error.message });
++        return;
++      }
+       res.status(500).json({ success: false, error: error.message });
+     }
+   }

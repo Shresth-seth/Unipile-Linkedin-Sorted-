@@ -51,17 +51,22 @@ app.use(
       if (process.env.NODE_ENV !== "production") {
         return callback(null, true);
       }
-      return callback(
-        new Error(`Origin '${origin}' is not allowed by CORS policy.`),
-      );
+      const corsError: any = new Error(`Origin '${origin}' is not allowed by CORS policy.`);
+      corsError.status = 403;
+      return callback(corsError);
     },
     credentials: true,
   }),
 );
 
 app.use(express.json({
+  limit: "1mb",
   verify: (req: any, _res, buffer) => {
-    if (req.originalUrl?.startsWith("/api/billing/webhook")) {
+    if (
+      req.originalUrl?.startsWith("/api/billing/webhook") ||
+      req.originalUrl?.startsWith("/api/webhooks") ||
+      req.originalUrl?.startsWith("/webhook")
+    ) {
       req.rawBody = Buffer.from(buffer);
     }
   },
@@ -115,10 +120,17 @@ app.get(["/api/health", "/api/health/liveness"], (_req, res) => {
       }
     }
   } catch {}
+  const mem = process.memoryUsage();
   res.status(200).json({
     status: "ok",
     version,
     commit: process.env.DEPLOYED_SHA || version,
+    uptimeSeconds: Math.floor(process.uptime()),
+    memory: {
+      rssBytes: mem.rss,
+      heapUsedBytes: mem.heapUsed,
+      heapTotalBytes: mem.heapTotal,
+    },
     timestamp: new Date().toISOString(),
   });
 });
@@ -126,9 +138,9 @@ app.get(["/api/health", "/api/health/liveness"], (_req, res) => {
 app.get("/api/health/readiness", async (_req, res) => {
   try {
     await db.execute(sql`select 1`);
-    res.status(200).json({ status: "ready", timestamp: new Date().toISOString() });
-  } catch {
-    res.status(503).json({ status: "not_ready", timestamp: new Date().toISOString() });
+    res.status(200).json({ status: "ready", database: "connected", timestamp: new Date().toISOString() });
+  } catch (err: any) {
+    res.status(503).json({ status: "not_ready", database: "disconnected", error: err?.message, timestamp: new Date().toISOString() });
   }
 });
 

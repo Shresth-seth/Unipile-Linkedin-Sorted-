@@ -1,0 +1,20 @@
+Test Files  10 passed (10)
+      Tests  116 passed (116)
+   Start at  17:57:03
+   Duration  6.78s
+
+Test File Breakdown:
+1. src/__tests__/unit/database-safety.test.ts (21 tests) - PASS
+2. src/__tests__/unit/webhook-auth.test.ts (8 tests) - PASS
+3. src/__tests__/unit/tenant-isolation.test.ts (21 tests) - PASS
+4. src/__tests__/unit/migrated-legacy.test.ts (7 tests) - PASS
+5. src/__tests__/integration/http-routes.test.ts (27 tests) - PASS
+6. src/__tests__/unit/database-integrity.test.ts (8 tests) - PASS
+7. src/__tests__/unit/webhook-pipeline.test.ts (8 tests) - PASS
+8. src/__tests__/unit/unipile-mock.test.ts (3 tests) - PASS
+9. src/__tests__/unit/safety-precheck.test.ts (7 tests) - PASS
+10. src/__tests__/unit/crypto-tokens.test.ts (6 tests) - PASS
+
+Total: 116 tests passing, 0 failing, 0 skipped.
+All tests executed strictly offline against mock proxies.
+Zero DB sockets or external HTTP connections created.

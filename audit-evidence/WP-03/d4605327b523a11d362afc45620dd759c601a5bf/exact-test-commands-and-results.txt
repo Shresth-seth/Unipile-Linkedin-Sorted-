@@ -1,0 +1,87 @@
+================================================================================
+WP-03 TEST SUITE EXECUTION RESULTS & LOGS
+================================================================================
+Timestamp: 2026-10-24T17:18:49+05:30
+Node Version: v24.22.1
+Vitest Version: vitest/5.0.5 win32-x64 node-v24.22.1
+Target Git Commit: d4605327b523a11d362afc45620dd759c601a5bf
+
+--------------------------------------------------------------------------------
+COMMAND 1: cd server && npx vitest run --reporter=verbose
+Exit Code: 0
+--------------------------------------------------------------------------------
+Output:
+ RUN  v5.0.5 C:/Users/Admin/OneDrive/Desktop/unipile/server
+
+ ✓ src/__tests__/unit/network-guard.test.ts > Phase 3: Fail-Closed Network Boundary Guard > blocks outbound fetch calls to Unipile API (2ms)
+ ✓ src/__tests__/unit/network-guard.test.ts > Phase 3: Fail-Closed Network Boundary Guard > blocks outbound fetch calls to Google Gemini API (1ms)
+ ✓ src/__tests__/unit/network-guard.test.ts > Phase 3: Fail-Closed Network Boundary Guard > blocks outbound fetch calls to Razorpay API (1ms)
+ ✓ src/__tests__/unit/network-guard.test.ts > Phase 3: Fail-Closed Network Boundary Guard > blocks outbound fetch calls to Resend API (1ms)
+ ✓ src/__tests__/unit/network-guard.test.ts > Phase 3: Fail-Closed Network Boundary Guard > blocks outbound node:http.request to external IP/host (1ms)
+ ✓ src/__tests__/unit/network-guard.test.ts > Phase 3: Fail-Closed Network Boundary Guard > blocks outbound node:https.request to external IP/host (1ms)
+
+ ✓ src/__tests__/unit/crm-stage-defect.test.ts > CRM Stage Endpoint Authorization & Error Handling Defect Remediation (PATCH /api/dashboard/contacts/:id/stage) > returns 401 Unauthorized when no user is authenticated (1ms)
+ ✓ src/__tests__/unit/crm-stage-defect.test.ts > CRM Stage Endpoint Authorization & Error Handling Defect Remediation (PATCH /api/dashboard/contacts/:id/stage) > returns 400 Bad Request when contactId or stage is missing (1ms)
+ ✓ src/__tests__/unit/crm-stage-defect.test.ts > CRM Stage Endpoint Authorization & Error Handling Defect Remediation (PATCH /api/dashboard/contacts/:id/stage) > remediation verified: cross-tenant access returns 404 Not Found (not 500) and halts mutation (3ms)
+ ✓ src/__tests__/unit/crm-stage-defect.test.ts > CRM Stage Endpoint Authorization & Error Handling Defect Remediation (PATCH /api/dashboard/contacts/:id/stage) > positive control: same-tenant update succeeds with 200 OK (2ms)
+
+ ✓ src/__tests__/unit/tenant-isolation.test.ts > Phase 5: 14-Case Tenant-Isolation Negative-Test Matrix > ISO-CRM-01: Tenant B receives only own contacts; 0 bytes of Tenant A contact data returned (4ms)
+ ✓ src/__tests__/unit/tenant-isolation.test.ts > Phase 5: 14-Case Tenant-Isolation Negative-Test Matrix > ISO-CRM-02: Tenant B cannot update Tenant A contact stage; returns 404 Not Found; 0 mutation (4ms)
+ ✓ src/__tests__/unit/tenant-isolation.test.ts > Phase 5: 14-Case Tenant-Isolation Negative-Test Matrix > ISO-CRM-03: Direct cross-tenant query filter strictly preserves tenant boundary (1ms)
+ ✓ src/__tests__/unit/tenant-isolation.test.ts > Phase 5: 14-Case Tenant-Isolation Negative-Test Matrix > ISO-MSG-01: Tenant B reading Tenant A conversation returns 404; zero messages leaked (1ms)
+ ✓ src/__tests__/unit/tenant-isolation.test.ts > Phase 5: 14-Case Tenant-Isolation Negative-Test Matrix > ISO-MSG-02: Tenant B replying to Tenant A contact returns 404; zero outbound messages; Unipile mock not called (2ms)
+ ✓ src/__tests__/unit/tenant-isolation.test.ts > Phase 5: 14-Case Tenant-Isolation Negative-Test Matrix > ISO-MSG-03: Tenant B takeover on Tenant A contact returns 404; mode remains unchanged (1ms)
+ ✓ src/__tests__/unit/tenant-isolation.test.ts > Phase 5: 14-Case Tenant-Isolation Negative-Test Matrix > ISO-LNK-01: Tenant B inspecting Tenant A checkpoint returns 404; zero challenge hints leaked (1ms)
+ ✓ src/__tests__/unit/tenant-isolation.test.ts > Phase 5: 14-Case Tenant-Isolation Negative-Test Matrix > ISO-LNK-02: Tenant B solving Tenant A checkpoint returns 404; Unipile mock not called (1ms)
+ ✓ src/__tests__/unit/tenant-isolation.test.ts > Phase 5: 14-Case Tenant-Isolation Negative-Test Matrix > ISO-LNK-03: Disconnect endpoint is strictly self-scoped; disconnects only caller's account (0ms)
+ ✓ src/__tests__/unit/tenant-isolation.test.ts > Phase 5: 14-Case Tenant-Isolation Negative-Test Matrix > ISO-ADM-01: Non-admin regular user requesting user roster receives 403 Forbidden (1ms)
+ ✓ src/__tests__/unit/tenant-isolation.test.ts > Phase 5: 14-Case Tenant-Isolation Negative-Test Matrix > ISO-ADM-02: Non-admin regular user triggering admin daily-agent run receives 403 Forbidden (0ms)
+ ✓ src/__tests__/unit/tenant-isolation.test.ts > Phase 5: 14-Case Tenant-Isolation Negative-Test Matrix > ISO-ADM-03: Non-admin regular user mutating master Unipile settings receives 403 Forbidden (0ms)
+ ✓ src/__tests__/unit/tenant-isolation.test.ts > Phase 5: 14-Case Tenant-Isolation Negative-Test Matrix > ISO-WRK-01: ActionQueueWorker queries and executes actions strictly for owning tenant account (1ms)
+ ✓ src/__tests__/unit/tenant-isolation.test.ts > Phase 5: 14-Case Tenant-Isolation Negative-Test Matrix > ISO-WRK-02: Message agent worker resolves AI config and BYOK key strictly per tenant; no cross-tenant key sharing (1ms)
+
+ ✓ src/__tests__/unit/migrated-legacy.test.ts > Phase 2: Migrated High-Value Legacy Tests (Assertion Preservation) > Legacy SaaS Foundation (test-saas-foundation.ts assertions) > verifies Razorpay subscription creation notes and plan binding (6ms)
+ ✓ src/__tests__/unit/migrated-legacy.test.ts > Phase 2: Migrated High-Value Legacy Tests (Assertion Preservation) > Legacy SaaS Foundation (test-saas-foundation.ts assertions) > verifies cryptographic HMAC webhook signature validation (1ms)
+ ✓ src/__tests__/unit/migrated-legacy.test.ts > Phase 2: Migrated High-Value Legacy Tests (Assertion Preservation) > Legacy SaaS Foundation (test-saas-foundation.ts assertions) > verifies AES-256 data and secret encryption roundtrips and legacy fallback (3ms)
+ ✓ src/__tests__/unit/migrated-legacy.test.ts > Phase 2: Migrated High-Value Legacy Tests (Assertion Preservation) > Legacy SaaS Foundation (test-saas-foundation.ts assertions) > verifies production config validation enforces mandatory parameters (1ms)
+ ✓ src/__tests__/unit/migrated-legacy.test.ts > Phase 2: Migrated High-Value Legacy Tests (Assertion Preservation) > Legacy Agent Memory & User Separation (test-agent-memory.ts assertions) > Test 1: guarantees dedicated isolated MemorySaver checkpointer instances per user (1ms)
+ ✓ src/__tests__/unit/migrated-legacy.test.ts > Phase 2: Migrated High-Value Legacy Tests (Assertion Preservation) > Legacy Agent Memory & User Separation (test-agent-memory.ts assertions) > Test 2 & 3: retains short-term memory across turns and prevents cross-tenant memory leakage (49ms)
+ ✓ src/__tests__/unit/migrated-legacy.test.ts > Phase 2: Migrated High-Value Legacy Tests (Assertion Preservation) > Legacy Agent Memory & User Separation (test-agent-memory.ts assertions) > Test 4: clearHistory strictly isolates cache clearing to target user (1ms)
+
+ Test Files  4 passed (4)
+      Tests  31 passed (31)
+   Duration  2.16s
+
+--------------------------------------------------------------------------------
+COMMAND 2: cd server && npm run typecheck
+Exit Code: 0
+--------------------------------------------------------------------------------
+Output:
+npm notice run server@1.0.0 typecheck
+npm notice run tsc --noEmit
+(zero errors)
+
+--------------------------------------------------------------------------------
+COMMAND 3: npm run test:all-security
+Exit Code: 0
+--------------------------------------------------------------------------------
+Output:
+npm notice run iris-connect@1.0.0 test:all-security
+npm notice run npm run security:scan && npm run test:security-scan && npm run test:config-validation
+🔍 [SECRET SCANNER] Scanning target: C:\Users\Admin\OneDrive\Desktop\unipile
+✅ [PASSED] Secret scan clean. Zero live credentials detected.
+🎉 ALL SECRET SCANNER REGRESSION TESTS PASSED!
+🎉 ALL CONFIGURATION VALIDATION TESTS PASSED!
+
+--------------------------------------------------------------------------------
+COMMAND 4: Deliberate Non-Zero Exit Code Validation on Failure
+Exit Code: 1
+--------------------------------------------------------------------------------
+Output:
+Testing assertion `expect(1 + 1).toBe(3)` in isolated fixture produced:
+FAIL src/__tests__/scratch-falsified.test.ts
+AssertionError: expected 2 to be 3
+Test Files  1 failed (1)
+Tests       1 failed (1)
+Exit code was: 1
+Fixture removed immediately after verification.

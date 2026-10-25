@@ -257,7 +257,7 @@ export const setPilotMode = async (req: AuthRequest, res: Response): Promise<voi
           automatedReplyCount: mode === "AUTOMATIC" ? 0 : contact.automatedReplyCount,
           updatedAt: new Date(),
         })
-        .where(eq(contacts.id, contact.id))
+        .where(and(eq(contacts.id, contact.id), eq(contacts.userId, userId)))
         .returning();
 
       res.status(200).json({

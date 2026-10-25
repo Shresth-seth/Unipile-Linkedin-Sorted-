@@ -1,6 +1,24 @@
-const { Pool } = require('pg');
-const pool = new Pool({ connectionString: 'postgresql://neondb_owner:npg_NoBl2i9yPcpq@ep-little-recipe-ay9d5cov-pooler.c-5.us-east-2.aws.neon.tech/neondb?sslmode=require' });
-pool.query("SELECT email, role FROM users WHERE email='admin@example.com'", (err, res) => {
+try { require('dotenv').config(); } catch (e) {}
+let Pool;
+try {
+  Pool = require('pg').Pool;
+} catch (e) {}
+
+const connectionString = process.env.DATABASE_URL && process.env.DATABASE_URL.trim();
+if (!connectionString) {
+  console.error("❌ Fatal: DATABASE_URL environment variable is required.");
+  process.exit(1);
+}
+
+const pool = new Pool({ connectionString });
+const targetEmail = process.env.CHECK_EMAIL || 'admin@example.com';
+
+pool.query("SELECT email, role FROM users WHERE email = $1", [targetEmail], (err, res) => {
+  if (err) {
+    console.error("Query failed:", err.message);
+    process.exit(1);
+  }
   console.log(res.rows);
+  pool.end();
   process.exit(0);
 });

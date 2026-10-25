@@ -149,7 +149,7 @@ RULES:
         connectedAt: new Date(),
         updatedAt: new Date(),
       })
-      .where(eq(contacts.id, contact.id))
+      .where(and(eq(contacts.id, contact.id), eq(contacts.userId, userId)))
       .returning();
 
     console.log(`🤝 [relation-agent] Contact ${contact.name} accepted LinkedIn invitation! Marked as CONNECTED.`);

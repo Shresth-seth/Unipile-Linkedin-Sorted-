@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { db } from "../../db/index.js";
 import { linkedinAccounts, actionQueue } from "../../db/schema.js";
 import {
@@ -646,6 +646,24 @@ export class LinkedInAccountService {
           updatedAt: new Date(),
         })
         .where(eq(linkedinAccounts.id, account.id));
+
+      // Immediately pause queued actions for this user to prevent unauthenticated execution attempts
+      try {
+        await db
+          .update(actionQueue)
+          .set({
+            status: "PAUSED",
+            errorMessage: "Account disconnected by user. Outbound actions paused.",
+          })
+          .where(
+            and(
+              eq(actionQueue.userId, userId),
+              eq(actionQueue.status, "QUEUED"),
+            ),
+          );
+      } catch {
+        // Safe fallback
+      }
     }
     return true;
   }

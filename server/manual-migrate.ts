@@ -1,12 +1,17 @@
-import { db } from "./src/db/index.js";
+import "./src/config/dotenv.config.js";
+import { applyCustomMigrations } from "./src/db/apply-migrations.js";
+import { client } from "./src/db/index.js";
 
 async function migrate() {
+  console.log("ℹ️ manual-migrate.ts has been consolidated into the versioned migration pipeline (0009).");
   try {
-    await db.execute('ALTER TABLE "daily_agent_settings" ADD COLUMN IF NOT EXISTS "auto_new_connection_message" boolean NOT NULL DEFAULT true;');
-    await db.execute('ALTER TABLE "daily_agent_settings" ADD COLUMN IF NOT EXISTS "new_connection_message_template" text;');
-    console.log("Migration successful");
+    await applyCustomMigrations();
+    console.log("✅ Custom migrations applied successfully.");
   } catch (err) {
-    console.log("Migration error or already applied", err);
+    console.error("❌ Migration error:", err);
+    process.exit(1);
+  } finally {
+    await client.end();
   }
   process.exit(0);
 }

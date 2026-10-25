@@ -1,25 +1,54 @@
-import postgres from 'postgres';
+try { await import('dotenv/config'); } catch (e) {}
 
-const sql = postgres('postgresql://neondb_owner:npg_NoBl2i9yPcpq@ep-little-recipe-ay9d5cov-pooler.c-5.us-east-2.aws.neon.tech/neondb?sslmode=require');
+const connectionString = process.env.DATABASE_URL?.trim();
+if (!connectionString) {
+  console.error("❌ Fatal: DATABASE_URL environment variable is required.");
+  process.exit(1);
+}
+
+let postgres;
+try {
+  postgres = (await import('postgres')).default;
+} catch (e) {
+  console.error("❌ Missing postgres driver. Run npm install.");
+  process.exit(1);
+}
+
+const sql = postgres(connectionString);
 
 async function test() {
   const settings = await sql`SELECT key, value FROM system_settings`;
   console.log('--- SYSTEM SETTINGS IN DB ---');
-  console.log(settings);
+  console.log(
+    settings.map((s) => ({
+      key: s.key,
+      value: s.key.toLowerCase().includes('key') || s.key.toLowerCase().includes('secret')
+        ? '[REDACTED]'
+        : s.value,
+    }))
+  );
 
   const unipileAccounts = await sql`SELECT id, user_id, unipile_account_id, linkedin_name, is_connected, health_status FROM linkedin_accounts`;
   console.log('--- LINKEDIN ACCOUNTS IN DB ---');
-  console.log(unipileAccounts);
+  console.log(
+    unipileAccounts.map((a) => ({
+      ...a,
+      unipile_account_id: a.unipile_account_id
+        ? a.unipile_account_id.substring(0, 4) + '...'
+        : null,
+    }))
+  );
 
-  console.log('--- UPDATING ADMIN PASSWORD ---');
-  const newHash = "$2b$10$A1JW0UvbBnmt.ixDvkumO.m6rNPMYASqijto0kNnPozVFxzIh2iqO"; // WorkPilot@2026
-  const pwdUpdated = await sql`
-    UPDATE users
-    SET password = ${newHash}, role = 'ADMIN', updated_at = NOW()
-    WHERE email = 'admin@workpilot.co.in'
-    RETURNING id, name, email, role
-  `;
-  console.log('Admin user:', pwdUpdated);
+  if (process.env.ADMIN_NEW_HASH) {
+    console.log('--- UPDATING ADMIN PASSWORD FROM ENVIRONMENT HASH ---');
+    const pwdUpdated = await sql`
+      UPDATE users
+      SET password = ${process.env.ADMIN_NEW_HASH}, role = 'ADMIN', updated_at = NOW()
+      WHERE email = 'admin@workpilot.co.in'
+      RETURNING id, name, email, role
+    `;
+    console.log('Admin user updated:', pwdUpdated);
+  }
 
   await sql.end();
   process.exit(0);

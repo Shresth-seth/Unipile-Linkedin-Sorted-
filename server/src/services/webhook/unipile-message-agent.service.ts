@@ -775,7 +775,7 @@ Respond ONLY with valid JSON:
         draftReplyAt: new Date(),
         updatedAt: new Date(),
       })
-      .where(eq(contacts.id, contactId));
+      .where(and(eq(contacts.id, contactId), eq(contacts.userId, userId)));
 
     taskManager.broadcastToUser(userId, "draft_reply_created", {
       contactId,
@@ -826,7 +826,7 @@ Respond ONLY with valid JSON:
         lastOutboundMessageId: norm.messageId || null,
         updatedAt: new Date(),
       })
-      .where(eq(contacts.id, contact.id));
+      .where(and(eq(contacts.id, contact.id), eq(contacts.userId, userId)));
   }
 
   private async resolveOrCreateContact(
