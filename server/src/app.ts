@@ -39,17 +39,20 @@ app.use(
       }
       try {
         const parsed = new URL(origin);
-        if (process.env.NODE_ENV !== "production" && (
+        if (
           parsed.hostname === "workpilot.co.in" ||
           parsed.hostname.endsWith(".workpilot.co.in")
-        )) {
+        ) {
+          return callback(null, true);
+        }
+        if (
+          process.env.NODE_ENV !== "production" &&
+          (parsed.hostname === "localhost" || parsed.hostname === "127.0.0.1")
+        ) {
           return callback(null, true);
         }
       } catch {
         // invalid URL format, fall through to check
-      }
-      if (process.env.NODE_ENV !== "production") {
-        return callback(null, true);
       }
       const corsError: any = new Error(`Origin '${origin}' is not allowed by CORS policy.`);
       corsError.status = 403;
@@ -93,6 +96,12 @@ app.use((_req, res, next) => {
   res.setHeader("X-Frame-Options", "DENY");
   res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
   res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+  res.setHeader(
+    "Content-Security-Policy",
+    "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https: blob:; media-src 'self' data: https: blob:; connect-src 'self' " +
+      allowedOrigins.join(" ") +
+      "; frame-ancestors 'none';",
+  );
   if (process.env.NODE_ENV === "production") {
     res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
   }

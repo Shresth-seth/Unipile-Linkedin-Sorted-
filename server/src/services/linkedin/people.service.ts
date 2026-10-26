@@ -18,35 +18,46 @@ export class LinkedInPeopleService {
     userId?: string | undefined,
   ): Promise<string> {
     if (preferredAccountId && preferredAccountId.trim()) {
-      return preferredAccountId.trim();
-    }
-    try {
+      const cleanPref = preferredAccountId.trim();
       if (userId) {
         const [acc] = await db
-          .select()
+          .select({ unipileAccountId: linkedinAccounts.unipileAccountId })
           .from(linkedinAccounts)
           .where(
             and(
               eq(linkedinAccounts.userId, userId),
+              eq(linkedinAccounts.unipileAccountId, cleanPref),
               eq(linkedinAccounts.isConnected, true),
             ),
           )
           .limit(1);
-        if (acc?.unipileAccountId && acc.healthStatus !== "DISCONNECTED") {
+        if (acc?.unipileAccountId) {
           return acc.unipileAccountId;
         }
+        throw new Error("The requested LinkedIn account does not belong to this user or is not connected.");
       }
-      const [anyAcc] = await db
-        .select()
-        .from(linkedinAccounts)
-        .where(eq(linkedinAccounts.isConnected, true))
-        .limit(1);
-      if (anyAcc?.unipileAccountId && anyAcc.healthStatus !== "DISCONNECTED") {
-        return anyAcc.unipileAccountId;
-      }
-    } catch {
-      // ignore
+      return cleanPref;
     }
+
+    if (userId) {
+      const [acc] = await db
+        .select({
+          unipileAccountId: linkedinAccounts.unipileAccountId,
+          healthStatus: linkedinAccounts.healthStatus,
+        })
+        .from(linkedinAccounts)
+        .where(
+          and(
+            eq(linkedinAccounts.userId, userId),
+            eq(linkedinAccounts.isConnected, true),
+          ),
+        )
+        .limit(1);
+      if (acc?.unipileAccountId && acc.healthStatus !== "DISCONNECTED") {
+        return acc.unipileAccountId;
+      }
+    }
+
     throw new Error(
       "No active LinkedIn account connected. Please connect your LinkedIn account to search or view profiles.",
     );

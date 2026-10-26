@@ -18,6 +18,34 @@ import { AuthRequest } from "../middlewares/auth.middleware.js";
 import { resolveUserId } from "../utils/resolve-user.js";
 import { SearchFilters } from "../types/linkedin.types.js";
 import { inboundSyncService } from "../services/linkedin/inbound-sync.service.js";
+import { safeErrorMessage } from "../utils/error.util.js";
+
+export function validateRedirectUrl(url?: string): string | undefined {
+  if (!url || typeof url !== "string") return undefined;
+  const clean = url.trim();
+  // Safe relative paths (e.g., /dashboard, /settings, /callback) - must start with / and not // or \
+  if (clean.startsWith("/") && !clean.startsWith("//") && !clean.includes("\\")) {
+    return clean;
+  }
+  try {
+    const parsed = new URL(clean);
+    const rawClientUrl = process.env.CLIENT_URL || "http://localhost:3000";
+    const allowed = rawClientUrl
+      .split(",")
+      .map((u) => u.trim().replace(/\/+$/, ""))
+      .filter(Boolean);
+    if (allowed.includes(parsed.origin)) {
+      return clean;
+    }
+    if (
+      process.env.NODE_ENV !== "production" &&
+      (parsed.hostname === "localhost" || parsed.hostname === "127.0.0.1")
+    ) {
+      return clean;
+    }
+  } catch {}
+  return undefined;
+}
 
 /**
  * Strict Security Guardrail: Resolves the Unipile account ID belonging exclusively
@@ -65,11 +93,22 @@ export const getConnectLink = async (
         .json({ success: false, message: "Authentication required." });
       return;
     }
-    const redirectUrl = req.query.redirect as string | undefined;
+    const rawRedirect = req.query.redirect as string | undefined;
+    let validatedRedirect: string | undefined = undefined;
+    if (rawRedirect) {
+      validatedRedirect = validateRedirectUrl(rawRedirect);
+      if (!validatedRedirect) {
+        res.status(400).json({
+          success: false,
+          message: "Invalid or unauthorized redirect URL.",
+        });
+        return;
+      }
+    }
 
     const link = await linkedInAccountService.generateAuthLink(
       userId,
-      redirectUrl,
+      validatedRedirect,
     );
 
     // If request accepts html or called directly via browser navigation, redirect directly
@@ -85,7 +124,10 @@ export const getConnectLink = async (
         "Open this link in browser to authenticate your LinkedIn account via Unipile.",
     });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({
+      success: false,
+      message: safeErrorMessage(error, "Failed to generate LinkedIn connect link."),
+    });
   }
 };
 

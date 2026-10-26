@@ -1,4 +1,4 @@
-import { eq, and } from "drizzle-orm";
+import { eq, and, ne } from "drizzle-orm";
 import { db } from "../../db/index.js";
 import { linkedinAccounts, actionQueue } from "../../db/schema.js";
 import {
@@ -36,6 +36,23 @@ export class LinkedInAccountService {
   ): Promise<any> {
     let resolvedAccountId = unipileAccountId;
     let unipileAcc: any = null;
+
+    // Reject attempt to claim an account already bound to another tenant
+    if (resolvedAccountId) {
+      const [claimedByOther] = await db
+        .select({ id: linkedinAccounts.id, userId: linkedinAccounts.userId })
+        .from(linkedinAccounts)
+        .where(
+          and(
+            eq(linkedinAccounts.unipileAccountId, resolvedAccountId),
+            ne(linkedinAccounts.userId, userId),
+          ),
+        )
+        .limit(1);
+      if (claimedByOther) {
+        throw new Error("This LinkedIn account is already linked to another workspace.");
+      }
+    }
 
     // Only resolve an account if explicitly provided or already connected on this specific user
     const [existing] = await db

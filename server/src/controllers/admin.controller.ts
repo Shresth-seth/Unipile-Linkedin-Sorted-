@@ -16,6 +16,7 @@ import { messageAgentWorker } from "../services/webhook/message-agent.worker.js"
 import { unipileMessageAgentService } from "../services/webhook/unipile-message-agent.service.js";
 import { geminiConfigService } from "../services/ai/gemini-config.service.js";
 import { decryptStoredSecret, encryptSecret } from "../utils/crypto.util.js";
+import { safeErrorMessage, isValidUuid } from "../utils/error.util.js";
 
 function normalizeUnipileDsn(value: string): string {
   let normalized = value.trim().replace(/\/+$/, "");
@@ -160,7 +161,7 @@ export const getAdminOverview = async (
     console.error("Admin overview error:", error);
     res.status(500).json({
       success: false,
-      message: error.message || "Failed to fetch admin overview.",
+      message: safeErrorMessage(error, "Failed to fetch admin overview."),
     });
   }
 };
@@ -290,7 +291,7 @@ export const getAdminLinkedinAccounts = async (
     console.error("Admin linkedin accounts error:", error);
     res.status(500).json({
       success: false,
-      message: error.message || "Failed to fetch LinkedIn accounts.",
+      message: safeErrorMessage(error, "Failed to fetch LinkedIn accounts."),
     });
   }
 };
@@ -304,6 +305,14 @@ export const adminDisconnectAccount = async (
 ): Promise<void> => {
   try {
     const { id } = req.params;
+
+    if (!isValidUuid(id)) {
+      res.status(400).json({
+        success: false,
+        message: "Invalid account ID format. Must be a valid UUID.",
+      });
+      return;
+    }
 
     // Find the account in our database
     const [account] = await db
@@ -356,7 +365,7 @@ export const adminDisconnectAccount = async (
     console.error("Admin disconnect account error:", error);
     res.status(500).json({
       success: false,
-      message: error.message || "Failed to disconnect account.",
+      message: safeErrorMessage(error, "Failed to disconnect account."),
     });
   }
 };
@@ -370,6 +379,14 @@ export const adminCheckAccountHealth = async (
 ): Promise<void> => {
   try {
     const { id } = req.params;
+
+    if (!isValidUuid(id)) {
+      res.status(400).json({
+        success: false,
+        message: "Invalid account ID format. Must be a valid UUID.",
+      });
+      return;
+    }
 
     // Find the account in our database
     const [account] = await db
@@ -464,7 +481,7 @@ export const adminCheckAccountHealth = async (
     console.error("Admin check health error:", error);
     res.status(500).json({
       success: false,
-      message: error.message || "Failed to check account health.",
+      message: safeErrorMessage(error, "Failed to check account health."),
     });
   }
 };
@@ -583,7 +600,7 @@ export const getAdminUsers = async (
     console.error("Admin users error:", error);
     res.status(500).json({
       success: false,
-      message: error.message || "Failed to fetch users.",
+      message: safeErrorMessage(error, "Failed to fetch users."),
     });
   }
 };
@@ -653,7 +670,7 @@ export const getUnipileSettings = async (
     console.error("Admin get unipile settings error:", error);
     res.status(500).json({
       success: false,
-      message: error.message || "Failed to fetch Unipile settings.",
+      message: safeErrorMessage(error, "Failed to fetch Unipile settings."),
     });
   }
 };
@@ -756,7 +773,7 @@ export const updateUnipileSettings = async (
     console.error("Admin update unipile settings error:", error);
     res.status(500).json({
       success: false,
-      message: error.message || "Failed to update Unipile settings.",
+      message: safeErrorMessage(error, "Failed to update Unipile settings."),
     });
   }
 };
@@ -858,7 +875,7 @@ export const testUnipileConnection = async (
     console.error("Admin test unipile connection error:", error);
     res.status(200).json({
       success: false,
-      message: `Connection test failed: ${error.message}`,
+      message: `Connection test failed: ${safeErrorMessage(error, "Connection failed.")}`,
       unipileStatus: 0,
     });
   }
@@ -955,7 +972,7 @@ export const getAdminQueueStats = async (
     console.error("Admin queue stats error:", error);
     res.status(500).json({
       success: false,
-      message: error.message || "Failed to fetch queue stats.",
+      message: safeErrorMessage(error, "Failed to fetch queue stats."),
     });
   }
 };
@@ -970,8 +987,8 @@ export const adminRunDailyAgent = async (
   try {
     const rawUserId = req.params.userId;
     const userId = Array.isArray(rawUserId) ? rawUserId[0] : rawUserId;
-    if (!userId) {
-      res.status(400).json({ success: false, message: "userId parameter is required." });
+    if (!userId || !isValidUuid(userId)) {
+      res.status(400).json({ success: false, message: "Valid userId parameter is required (UUID format)." });
       return;
     }
 
@@ -983,7 +1000,7 @@ export const adminRunDailyAgent = async (
     console.error("Admin run daily agent error:", error);
     res.status(500).json({
       success: false,
-      message: error.message || "Failed to execute daily agent for user.",
+      message: safeErrorMessage(error, "Failed to execute daily agent for user."),
     });
   }
 };
@@ -1016,7 +1033,7 @@ export const adminSimulateMessageWebhook = async (
     console.error("Admin simulate webhook error:", error);
     res.status(500).json({
       success: false,
-      message: error.message || "Failed to simulate message webhook.",
+      message: safeErrorMessage(error, "Failed to simulate message webhook."),
     });
   }
 };
@@ -1031,8 +1048,8 @@ export const adminProcessMessageJob = async (
   try {
     const rawJobId = req.params.jobId;
     const jobId = Array.isArray(rawJobId) ? rawJobId[0] : rawJobId;
-    if (!jobId) {
-      res.status(400).json({ success: false, message: "jobId parameter is required." });
+    if (!jobId || !isValidUuid(jobId)) {
+      res.status(400).json({ success: false, message: "Valid jobId parameter is required (UUID format)." });
       return;
     }
 
@@ -1047,7 +1064,7 @@ export const adminProcessMessageJob = async (
     console.error("Admin process message job error:", error);
     res.status(500).json({
       success: false,
-      message: error.message || "Failed to process message job.",
+      message: safeErrorMessage(error, "Failed to process message job."),
     });
   }
 };
@@ -1131,7 +1148,7 @@ export const getAutomationHealth = async (
     console.error("Get automation health error:", error);
     res.status(500).json({
       success: false,
-      message: error.message || "Failed to retrieve automation health telemetry.",
+      message: safeErrorMessage(error, "Failed to retrieve automation health telemetry."),
     });
   }
 };
@@ -1194,7 +1211,7 @@ export const getGeminiSettings = async (
     console.error("Admin get gemini settings error:", error);
     res.status(500).json({
       success: false,
-      message: error.message || "Failed to fetch Gemini settings.",
+      message: safeErrorMessage(error, "Failed to fetch Gemini settings."),
     });
   }
 };
@@ -1274,7 +1291,7 @@ export const updateGeminiSettings = async (
     console.error("Admin update gemini settings error:", error);
     res.status(500).json({
       success: false,
-      message: error.message || "Failed to update Gemini settings.",
+      message: safeErrorMessage(error, "Failed to update Gemini settings."),
     });
   }
 };
@@ -1298,7 +1315,7 @@ export const testGeminiConnection = async (
     console.error("Admin test gemini connection error:", error);
     res.status(200).json({
       success: false,
-      message: `Gemini connection test failed: ${error.message}`,
+      message: `Gemini connection test failed: ${safeErrorMessage(error, "Connection test failed.")}`,
     });
   }
 };

@@ -77,3 +77,13 @@ export class NotFoundError extends Error {
   }
 }
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Validates that an input is a valid UUID string (v1-v5).
+ */
+export function isValidUuid(val: unknown): val is string {
+  return typeof val === "string" && UUID_REGEX.test(val.trim());
+}
+
+

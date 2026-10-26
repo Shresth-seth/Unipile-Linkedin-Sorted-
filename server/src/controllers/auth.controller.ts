@@ -4,7 +4,7 @@ import crypto from "node:crypto";
 import { and, eq, gt, isNull, sql } from "drizzle-orm";
 import { db } from "../db/index.js";
 import { users, linkedinAccounts, contacts, messages, actionQueue, authTokens } from "../db/schema.js";
-import { generateToken } from "../utils/jwt.util.js";
+import { generateToken, verifyJwt } from "../utils/jwt.util.js";
 import { safeErrorMessage } from "../utils/error.util.js";
 import { AuthRequest } from "../middlewares/auth.middleware.js";
 import { unipileClient } from "../services/unipile/unipile.client.js";
@@ -425,12 +425,38 @@ export const getMe = async (req: AuthRequest, res: Response): Promise<void> => {
   }
 };
 
-export const logout = async (_req: Request, res: Response): Promise<void> => {
-  res.clearCookie("token", COOKIE_OPTIONS);
-  res.status(200).json({
-    success: true,
-    message: "Logged out successfully.",
-  });
+export const logout = async (req: Request, res: Response): Promise<void> => {
+  try {
+    let token: string | undefined;
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      token = authHeader.split(" ")[1];
+    } else if (req.cookies && req.cookies.token) {
+      token = req.cookies.token;
+    }
+
+    if (token) {
+      const decoded = verifyJwt(token);
+      if (decoded?.userId) {
+        // Increment sessionVersion to invalidate this token and all active sessions server-side
+        await db
+          .update(users)
+          .set({
+            sessionVersion: sql`${users.sessionVersion} + 1`,
+            updatedAt: new Date(),
+          })
+          .where(eq(users.id, decoded.userId));
+      }
+    }
+  } catch (err) {
+    console.warn("Logout session revocation notice:", err);
+  } finally {
+    res.clearCookie("token", COOKIE_OPTIONS);
+    res.status(200).json({
+      success: true,
+      message: "Logged out successfully.",
+    });
+  }
 };
 
 /**
